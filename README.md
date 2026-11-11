@@ -22,6 +22,7 @@ The page contains no student data; it only stores entries on the device that ope
 ## 3. At a fair
 - Staff (lock, top right) → **New event**: name, type, date, the **counselor** at the event, the **school** (filled in for every high school student who signs up; leave it blank at a college fair), and an optional fixed campus. Each event is its own list. **Use this event** switches back to an earlier one.
 - The current event sits on top. Earlier events fold into **Other events**, and the **Form** settings stay folded until opened.
+- The current event's name and date show at the top of the sign-up form, so staff can check the iPad is on the right event.
 - Every sign-up goes to the current event. The staff screen won't return to the form until an event exists.
 - Kiosk lock: Settings → Accessibility → Guided Access → On. Then triple-click the top/home button inside the app.
 - A half-filled form clears itself after 90 seconds untouched, and staff mode locks itself after 2 minutes.
@@ -42,7 +43,7 @@ Edit the files, bump `VERSION` in `sw.js`, and re-upload. The iPad picks up the 
 ## Shortcuts for students
 - **Start term** follows the graduation year for high school students (Class of 2027 → Fall 2027) until they pick one.
 - At a **High School Visit** or **Classroom Visit**, "High school student" starts chosen, and the event's school fills in.
-- **Email**: one-tap @gmail.com / @icloud.com / … endings, and "Did you mean …?" for common misspellings (gmial.com, yahoo.con).
+- **Email**: one-tap @gmail.com / @nycstudents.net / @icloud.com / … endings, and "Did you mean …?" for common misspellings (gmial.com, yahoo.con).
 - **Phone** formats as (XXX) XXX-XXXX while typing, Homebase's own rule (a leading 1 dropped, +international left alone).
 - **ZIP**: city and state fill in from the ZIP, and clear again if the ZIP is deleted (a city or state the student typed stays). Any US ZIP works offline: `zipcodes.json` is the GeoNames US postal-code list (CC BY 4.0, geonames.org) that Homebase's planner bundles.
 - **Names** typed all-lowercase or ALL-CAPS are tidied (ana o'brien → Ana O'Brien). Mixed case is kept as typed.
@@ -50,7 +51,7 @@ Edit the files, bump `VERSION` in `sw.js`, and re-upload. The iPad picks up the 
 - **Gold dot on the lock**: an earlier event still has sign-ups that haven't been exported.
 
 ## Program list
-The searchable majors (and their Plan1Nm codes) are LIU's programs as Homebase's intake forms offer them: the programs applicants chose in the current and prior cycle, filtered by campus and student type, with retired programs removed. They're embedded in `index.html` (`var PROGRAMS = …`), taken from Homebase DEV on 11/11/2026. Ask Claude to refresh them when programs change. Students can still type something that isn't on the list.
+The searchable majors (and their Plan1Nm codes) are LIU's programs as Homebase's intake forms offer them: the programs applicants chose in the current and prior cycle, filtered by campus and student type, with retired programs removed. They're embedded in `index.html` (`var PROGRAMS = …`), taken from Homebase DEV on 11/11/2026. Ask Claude to refresh them when programs change. Students can still type something that isn't on the list. Students see each program's **full name** (Homebase's `ACAD_PLAN_FULL_DECODE`, e.g. "Data Analytics & Strategic Business Intelligence MS"); the file still carries PeopleSoft's short name, which Recruit and Homebase match on.
 
 ## International students
 Answering Yes shows a Country field. The export then marks the student type as Intl First-Year, Intl Transfer or Intl Graduate, which are Homebase's international student types. Choosing high school, transfer or graduate is required when Yes is picked.
