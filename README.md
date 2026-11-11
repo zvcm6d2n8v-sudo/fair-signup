@@ -28,7 +28,7 @@ The page contains no student data; it only stores entries on the device that ope
 
 ## 4. Export and into Homebase
 The export is LIU Recruit's own **ProspectImportTemplate** (.xlsx), a 1:1 match of the file Homebase sends to LIU Recruit: the same sheet name, the same 22 columns in the same order, and Recruit's raw codes (AdmitType FRE/IGR…, AdmitTerm 1274…, Institution B/P…, Plan1Nm). The comment uses Homebase's wording ("Met student at College Fair, provided information about the University."), plus the graduation year and the student's own comment when given, since the template has no columns for them. The counselor goes in the file name: `<event> - <counselor> - ProspectImportTemplate_<date>.xlsx`.
-1. Staff → next to the event: **Email or AirDrop** (share sheet: Mail, AirDrop, Save to Files…) or **Download** (Files → Downloads).
+1. Staff (lock, top right) → **Email this list** on the current event (or **Email or save** next to any event). The iPad's share sheet opens with the .xlsx attached: pick **Mail** and send it to yourself (Mail suggests your address after the first time), or **Save to Files** / AirDrop. A Home Screen app can't download files, so there's no Download button on the iPad.
 2. In Homebase, open that event → **Upload a list** → choose the file. Homebase reads the Recruit template's columns on its own (Homebase DEV, unpushed as of 11/11/2026: until that's pushed, match the columns by hand once in LIVE, and Homebase remembers them). The students then reach LIU Recruit through the event's own Recruit export, as usual. Don't also upload the iPad file to LIU Recruit directly, or the students will be duplicated there.
 3. Back on the iPad: **Delete** the event once it's in Homebase.
 

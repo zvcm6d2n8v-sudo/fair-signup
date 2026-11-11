@@ -284,18 +284,24 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--n
 input[type=date] { width: 100%; font-size: 18px; font-weight: 500; min-height: 52px; padding: 12px 14px; border: 1px solid var(--field-border); border-radius: var(--r-sm); background: #fff; color: var(--navy); -webkit-appearance: none; appearance: none; font-family: var(--font); }
 .group.current { border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
 /* folding: the Form card and the list of other events start closed */
-details > summary { list-style: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+details > summary { display: block; list-style: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 details > summary::-webkit-details-marker { display: none; }
+details > summary::marker { content: ''; }
+/* the row INSIDE the summary does the layout — iPad Safari (iOS 17) won't make a <summary> a flex box */
+.fold-row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.fold-row .grow, .fold-row h2 { flex: 1 1 auto; min-width: 0; }
+.fold-chev { flex: none; width: 10px; height: 10px; border-right: 2px solid var(--navy); border-bottom: 2px solid var(--navy);
+  transform: rotate(45deg); margin: -4px 6px 0 12px; transition: transform .15s ease; }
+details[open] > summary .fold-chev { transform: rotate(225deg); margin-top: 4px; }
 .card.fold { padding-bottom: 0; }
-.card.fold > summary { display: flex; align-items: center; justify-content: space-between; margin: -20px -22px 0; padding: 14px 22px; min-height: 56px; }
+.card.fold > summary { margin: -20px -22px 0; padding: 14px 22px; }
+.card.fold > summary .fold-row { min-height: 28px; }
 .card.fold > summary h2 { margin: 0; padding: 0; border: 0; font-size: 17px; font-weight: 600; color: var(--navy); }
 .card.fold[open] { padding-bottom: 22px; }
 .card.fold[open] > summary { border-bottom: 1px solid var(--line-soft); margin-bottom: 18px; }
-.fold-chev, .card.fold > summary::after { content: ''; width: 10px; height: 10px; border-right: 2px solid var(--navy); border-bottom: 2px solid var(--navy); transform: rotate(45deg); margin: -4px 6px 0 12px; transition: transform .15s ease; flex: none; }
-.card.fold[open] > summary::after, details[open] > summary .fold-chev { transform: rotate(225deg); margin-top: 4px; }
 .others { margin-top: 6px; }
-.others > summary { display: flex; align-items: center; padding: 12px 4px; min-height: 52px; font-size: 17px; font-weight: 600; color: var(--navy); }
-.others > summary .grow { flex: 1; }
+.others > summary { padding: 12px 4px; font-size: 17px; font-weight: 600; color: var(--navy); }
+.others > summary .fold-row { min-height: 28px; }
 .others[open] > summary { margin-bottom: 8px; }
 .group-meta { width: 100%; color: var(--muted); font-size: 14px; margin: -2px 0 4px; }
 .pill.cur { background: var(--navy); color: #fff; }
@@ -476,7 +482,8 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       <div class="cur-name" id="curName"></div>
       <div class="cur-meta" id="curMeta"></div>
       <div class="row" style="margin-top:12px">
-        <button type="button" class="btn primary" id="newEvent">New event</button>
+        <button type="button" class="btn primary" id="emailCur" hidden>Email this list</button>
+        <button type="button" class="btn" id="newEvent">New event</button>
         <button type="button" class="btn" id="editEvent">Edit event</button>
       </div>
     </div>
@@ -511,7 +518,7 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   </section>
 
   <details class="card fold" id="formSettings">
-    <summary><h2>Form</h2></summary>
+    <summary><span class="fold-row"><h2>Form</h2><span class="fold-chev"></span></span></summary>
     <div class="grid">
       <label class="f"><span>Heading</span>
         <input type="text" id="setHeading" maxlength="60" autocomplete="off" autocorrect="off"></label>
@@ -522,7 +529,7 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       </div>
     </div>
   </details>
-  <p class="ver">Version 9 · 11/11/2026</p>
+  <p class="ver">Version 11 · 11/11/2026</p>
 </div>
 
 <div class="toast" id="toast" hidden></div>
@@ -575,11 +582,11 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     return Date.now().toString(36) + Math.random().toString(36).slice(2);
   }
   var toastTimer;
-  function toast(msg) {
+  function toast(msg, ms) {
     var t = $('toast');
     t.textContent = msg; t.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.hidden = true; }, 3000);
+    toastTimer = setTimeout(function () { t.hidden = true; }, ms || 3000);
   }
 
   // ---------- settings (small, per device) ----------
@@ -1371,7 +1378,7 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       renderCurrent();
       var host = $('groups');
       if (!lastGroups.length) { host.innerHTML = '<div class="empty">No events yet</div>'; return; }
-      var curHtml = '', otherHtml = '', nOther = 0, otherFresh = 0;
+      var curHtml = '', otherHtml = '', nOther = 0, otherFresh = 0; curGroup = null; $('emailCur').hidden = true;
       lastGroups.forEach(function (g, gi) {
         var isCur = g.ev.id === settings.currentEvent;
         var fresh = g.items.filter(function (e) { return !e.exported; }).length;
@@ -1392,24 +1399,30 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
             (fresh ? '<span class="pill new">' + fresh + ' new</span>' : '') + '</h3>' +
           '<div class="row">' +
             (isCur ? '' : '<button class="btn navy" data-use="' + gi + '">Use this event</button>') +
-            (has && CAN_SHARE ? '<button class="btn primary" data-share="' + gi + '">Email or AirDrop</button>' : '') +
-            (has ? '<button class="btn' + (CAN_SHARE ? '' : ' primary') + '" data-download="' + gi + '">Download</button>' : '') +
+            (has && (CAN_SHARE || IS_IOS) ? '<button class="btn primary" data-share="' + gi + '">' + SHARE_LABEL + '</button>' : '') +
+            (has && CAN_DOWNLOAD ? '<button class="btn' + (CAN_SHARE ? '' : ' primary') + '" data-download="' + gi + '">Download</button>' : '') +
             '<button class="btn danger" data-clear="' + gi + '">Delete</button>' +
           '</div>' +
           '<div class="group-meta">' + eventMeta(g.ev) + '</div></div>' +
           (has ? '<table><thead><tr><th>Name</th><th>Email</th><th>Signed up</th><th></th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
                : '<div class="empty">No sign-ups yet</div>') +
           '</div>';
-        if (isCur) curHtml += html; else { otherHtml += html; nOther++; otherFresh += fresh; }
+        if (isCur) {
+          curHtml += html; curGroup = g;
+          $('emailCur').hidden = !has;
+          $('emailCur').textContent = 'Email this list (' + g.items.length + (fresh && fresh < g.items.length ? ', ' + fresh + ' new' : '') + ')';
+        } else { otherHtml += html; nOther++; otherFresh += fresh; }
       });
       host.innerHTML = curHtml +
-        (nOther ? '<details class="others" id="otherEvents"' + (othersOpen ? ' open' : '') + '><summary><span class="grow">Other events' +
+        (nOther ? '<details class="others" id="otherEvents"' + (othersOpen ? ' open' : '') + '><summary><span class="fold-row"><span class="grow">Other events' +
           '<span class="pill">' + nOther + '</span>' + (otherFresh ? '<span class="pill new">' + otherFresh + ' new</span>' : '') +
-          '</span><span class="fold-chev"></span></summary>' + otherHtml + '</details>' : '');
+          '</span><span class="fold-chev"></span></span></summary>' + otherHtml + '</details>' : '');
       if ($('otherEvents')) $('otherEvents').addEventListener('toggle', function () { othersOpen = $('otherEvents').open; });
     });
   }
-  var othersOpen = false;      // the other-events list starts closed; it stays as staff leave it while they work
+  var othersOpen = false;
+  var curGroup = null;         // the current event's group, for the quick Email button
+  $('emailCur').addEventListener('click', function () { if (curGroup) exportGroup(curGroup, 'share'); });      // the other-events list starts closed; it stays as staff leave it while they work
 
   $('groups').addEventListener('click', function (ev) {
     var b = ev.target.closest('button'); if (!b) return;
@@ -1516,38 +1529,44 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   }
   function safeName(s) { return String(s || '').replace(/[^\w\s-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Event'; }
 
-  // Email or AirDrop = the iPad's share sheet with the workbook attached
-  // (Mail, AirDrop, Messages, Save to Files…), subject filled in.
-  // Download = the workbook straight into Files → Downloads.
+  // Sending = the share sheet with the workbook attached (Mail, AirDrop,
+  // Save to Files…). The file goes ALONE: iPad Safari can refuse a share that
+  // mixes a file with a title / text (11/11: Email failed on the iPad, and the
+  // download fallback then 404'd — a Home Screen app can't download at all).
+  // So on an iPad there is no download path; Save to Files is in the sheet.
+  var IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var CAN_SHARE = (function () {
     try { return !!(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.xlsx', { type: XLSX_TYPE })] })); }
     catch (e) { return false; }
   })();
-  function exportGroup(g, how) {
-    if (!g || !g.items.length) return;
+  var CAN_DOWNLOAD = !IS_IOS;
+  var SHARE_LABEL = IS_IOS ? 'Email or save' : 'Email or AirDrop';
+  function exportFileName(g) {
     var d = new Date(), ev = g.ev;
     var ymd = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
     // Homebase names it "<event> - ProspectImportTemplate_<date>.xlsx"; the
     // counselor rides in the name (the template has no column for one).
-    var fname = safeName(g.name) + (ev.counselor ? ' - ' + safeName(ev.counselor) : '') + ' - ProspectImportTemplate_' + ymd + '.xlsx';
-    var blob = recruitXlsx(g.items, ev);
+    return safeName(g.name) + (ev.counselor ? ' - ' + safeName(ev.counselor) : '') + ' - ProspectImportTemplate_' + ymd + '.xlsx';
+  }
+  function exportGroup(g, how) {
+    if (!g || !g.items.length) return;
+    var fname = exportFileName(g);
+    var blob = recruitXlsx(g.items, g.ev);
     function markExported() {
       var stamp = new Date().toISOString();
       var upd = g.items.map(function (e) { var c = Object.assign({}, e); c.exported = c.exported || stamp; return c; });
       return putEntries(upd).then(renderGroups).then(checkUnexported);
     }
-    if (how === 'share' && CAN_SHARE) {
-      navigator.share({
-        files: [new File([blob], fname, { type: XLSX_TYPE })],
-        title: 'LIU sign-ups: ' + g.name,
-        text: g.items.length + ' sign-ups from ' + g.name + (ev.date ? ' (' + isoToUs(ev.date) + ')' : '') +
-          (ev.counselor ? ', counselor ' + ev.counselor : '') + '. In Homebase: open the event, then Upload a list.'
-      }).then(function () {
-        markExported(); toast('Sent ' + g.items.length + ' sign-ups');
+    if (how === 'share') {
+      if (!CAN_SHARE) { toast(IS_IOS ? 'This iPad can\u2019t open the share sheet here — update iPadOS or open the page in Safari' : 'Sharing isn\u2019t available here — use Download'); return; }
+      // called straight from the tap: the share sheet needs that tap
+      navigator.share({ files: [new File([blob], fname, { type: XLSX_TYPE })] }).then(function () {
+        markExported(); toast('Sent ' + g.items.length + ' sign-up' + (g.items.length === 1 ? '' : 's'));
       }).catch(function (err) {
-        if (err && err.name !== 'AbortError') { toast('Sharing failed — downloading instead'); downloadBlob(blob, fname, markExported); }
+        if (err && err.name === 'AbortError') return;          // closed the sheet: nothing sent
+        toast('Couldn\u2019t open sharing (' + ((err && (err.name + (err.message ? ': ' + err.message : ''))) || 'unknown') + ')', 9000);
       });
-    } else {
+    } else if (CAN_DOWNLOAD) {
       downloadBlob(blob, fname, markExported);
     }
   }
