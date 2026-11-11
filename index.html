@@ -305,6 +305,9 @@ details[open] > summary .fold-chev { transform: rotate(225deg); margin-top: 4px;
 .others[open] > summary { margin-bottom: 8px; }
 .group-meta { width: 100%; color: var(--muted); font-size: 14px; margin: -2px 0 4px; }
 .pill.cur { background: var(--navy); color: #fff; }
+.send-help { margin-top: 14px; padding: 14px 16px; border-radius: var(--r-sm); background: #fff4d6; border: 1px solid #f0d58a; }
+.sh-title { font-weight: 700; color: #6b4a00; margin-bottom: 10px; }
+.sh-diag { margin-top: 10px; font-size: 13px; color: #6b4a00; word-break: break-word; }
 .ver { text-align: center; color: var(--muted); font-size: 13px; margin-top: 18px; }
 
 .group { border: 1px solid var(--card-border); border-radius: var(--r-sm); margin-bottom: 14px; overflow: hidden; }
@@ -481,6 +484,15 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     <div id="curShow" hidden>
       <div class="cur-name" id="curName"></div>
       <div class="cur-meta" id="curMeta"></div>
+      <div class="send-help" id="sendHelp" hidden>
+        <div class="sh-title">Sharing didn’t open on this iPad — try another way</div>
+        <div class="row">
+          <button type="button" class="btn primary" id="shSave">Save to Files</button>
+          <button type="button" class="btn" id="shOpen">Open the file</button>
+          <button type="button" class="btn" id="shClose">Close</button>
+        </div>
+        <div class="sh-diag" id="shDiag"></div>
+      </div>
       <div class="row" style="margin-top:12px">
         <button type="button" class="btn primary" id="emailCur" hidden>Email this list</button>
         <button type="button" class="btn" id="newEvent">New event</button>
@@ -529,7 +541,7 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       </div>
     </div>
   </details>
-  <p class="ver">Version 11 · 11/11/2026</p>
+  <p class="ver">Version 12 · 11/11/2026</p>
 </div>
 
 <div class="toast" id="toast" hidden></div>
@@ -1399,7 +1411,7 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
             (fresh ? '<span class="pill new">' + fresh + ' new</span>' : '') + '</h3>' +
           '<div class="row">' +
             (isCur ? '' : '<button class="btn navy" data-use="' + gi + '">Use this event</button>') +
-            (has && (CAN_SHARE || IS_IOS) ? '<button class="btn primary" data-share="' + gi + '">' + SHARE_LABEL + '</button>' : '') +
+            (has && (CAN_SHARE || IS_IOS || typeof navigator.share === 'function') ? '<button class="btn primary" data-share="' + gi + '">' + SHARE_LABEL + '</button>' : '') +
             (has && CAN_DOWNLOAD ? '<button class="btn' + (CAN_SHARE ? '' : ' primary') + '" data-download="' + gi + '">Download</button>' : '') +
             '<button class="btn danger" data-clear="' + gi + '">Delete</button>' +
           '</div>' +
@@ -1513,7 +1525,10 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     });
     var cdSize = central.reduce(function (n, c) { return n + c.length; }, 0);
     var end = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(cdSize), u32(offset), u16(0)));
-    return new Blob(chunks.concat(central, [end]), { type: XLSX_TYPE });
+    var all = chunks.concat(central, [end]), total = all.reduce(function (n, c) { return n + c.length; }, 0);
+    var out = new Uint8Array(total), at = 0;
+    all.forEach(function (c) { out.set(c, at); at += c.length; });
+    return out;
   }
   var XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
   function recruitXlsx(items, ev) {
@@ -1526,6 +1541,11 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       return { name: p.name, data: utf8(text) };
     });
     return zipStore(parts);
+  }
+  function bytesToBase64(bytes) {
+    var bin = '', CH = 0x8000;
+    for (var i = 0; i < bytes.length; i += CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+    return btoa(bin);
   }
   function safeName(s) { return String(s || '').replace(/[^\w\s-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Event'; }
 
@@ -1548,34 +1568,80 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     // counselor rides in the name (the template has no column for one).
     return safeName(g.name) + (ev.counselor ? ' - ' + safeName(ev.counselor) : '') + ' - ProspectImportTemplate_' + ymd + '.xlsx';
   }
+  // What this device says about sharing files — shown with the fallback so a
+  // failure on the iPad can be diagnosed from a screenshot.
+  var IS_STANDALONE = window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  function shareProbe() {
+    var out = { share: typeof navigator.share === 'function', canShare: typeof navigator.canShare === 'function', types: {} };
+    [['xlsx', XLSX_TYPE], ['generic', 'application/octet-stream'], ['untyped', '']].forEach(function (t) {
+      try {
+        out.types[t[0]] = out.canShare ? navigator.canShare({ files: [new File(['x'], 'x.xlsx', t[1] ? { type: t[1] } : {})] }) : null;
+      } catch (e) { out.types[t[0]] = 'error'; }
+    });
+    var m = /(?:OS |Version\/)(\d+[._]\d+(?:[._]\d+)?)/.exec(navigator.userAgent);
+    out.version = m ? m[1].replace(/_/g, '.') : '?';
+    return out;
+  }
+  function diagText(probe, err) {
+    function yn(v) { return v === true ? 'yes' : v === false ? 'no' : v === null ? 'n/a' : String(v); }
+    return 'Details — share: ' + yn(probe.share) + ' · canShare: ' + yn(probe.canShare) +
+      ' · file check xlsx/generic/untyped: ' + yn(probe.types.xlsx) + '/' + yn(probe.types.generic) + '/' + yn(probe.types.untyped) +
+      ' · Home Screen app: ' + yn(IS_STANDALONE) + ' · Safari ' + probe.version +
+      (err ? ' · error: ' + (err.name || 'Error') + (err.message ? ' (' + err.message + ')' : '') : '');
+  }
+  var helpGroup = null;
+  function showSendHelp(g, err) {
+    helpGroup = g;
+    $('shDiag').textContent = diagText(shareProbe(), err);
+    $('sendHelp').hidden = false;
+    $('sendHelp').scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
   function exportGroup(g, how) {
     if (!g || !g.items.length) return;
     var fname = exportFileName(g);
-    var blob = recruitXlsx(g.items, g.ev);
+    var bytes = recruitXlsx(g.items, g.ev);
     function markExported() {
       var stamp = new Date().toISOString();
       var upd = g.items.map(function (e) { var c = Object.assign({}, e); c.exported = c.exported || stamp; return c; });
       return putEntries(upd).then(renderGroups).then(checkUnexported);
     }
     if (how === 'share') {
-      if (!CAN_SHARE) { toast(IS_IOS ? 'This iPad can\u2019t open the share sheet here — update iPadOS or open the page in Safari' : 'Sharing isn\u2019t available here — use Download'); return; }
-      // called straight from the tap: the share sheet needs that tap
-      navigator.share({ files: [new File([blob], fname, { type: XLSX_TYPE })] }).then(function () {
+      if (typeof navigator.share !== 'function') { showSendHelp(g, null); return; }
+      // the type the device says it can share; if it says no to all, try anyway —
+      // its check can be stricter than the share itself
+      var probe = shareProbe();
+      var type = probe.types.xlsx === true ? XLSX_TYPE : probe.types.generic === true ? 'application/octet-stream'
+        : probe.types.untyped === true ? '' : XLSX_TYPE;
+      var file = new File([bytes], fname, type ? { type: type } : {});
+      var p;
+      try { p = navigator.share({ files: [file] }); } catch (e) { showSendHelp(g, e); return; }
+      p.then(function () {
+        $('sendHelp').hidden = true;
         markExported(); toast('Sent ' + g.items.length + ' sign-up' + (g.items.length === 1 ? '' : 's'));
       }).catch(function (err) {
         if (err && err.name === 'AbortError') return;          // closed the sheet: nothing sent
-        toast('Couldn\u2019t open sharing (' + ((err && (err.name + (err.message ? ': ' + err.message : ''))) || 'unknown') + ')', 9000);
+        showSendHelp(g, err);
       });
-    } else if (CAN_DOWNLOAD) {
-      downloadBlob(blob, fname, markExported);
+    } else if (how === 'open') {
+      // the file in the iPad's own viewer, which has its own Share button (Mail)
+      var a1 = document.createElement('a');
+      a1.href = 'data:' + XLSX_TYPE + ';base64,' + bytesToBase64(bytes);
+      a1.target = '_blank'; a1.rel = 'noopener';
+      document.body.appendChild(a1); a1.click(); a1.remove();
+      markExported();
+    } else {
+      downloadBlob(bytes, fname, markExported);
     }
   }
-  function downloadBlob(blob, fname, after) {
-    var url = URL.createObjectURL(blob);
+  $('shSave').addEventListener('click', function () { if (helpGroup) exportGroup(helpGroup, 'download'); });
+  $('shOpen').addEventListener('click', function () { if (helpGroup) exportGroup(helpGroup, 'open'); });
+  $('shClose').addEventListener('click', function () { $('sendHelp').hidden = true; });
+  function downloadBlob(bytes, fname, after) {
     var a = document.createElement('a');
-    a.href = url; a.download = fname;
+    a.href = 'data:' + XLSX_TYPE + ';base64,' + bytesToBase64(bytes);
+    a.download = fname;
     document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
     after && after();
     toast('Saved ' + fname);
   }
