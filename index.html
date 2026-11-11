@@ -103,6 +103,32 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--n
 
 .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 @media (max-width: 640px) { .seg { grid-template-columns: 1fr; } }
+.seg.invalid label { border-color: var(--danger); }
+.intl-row { display: flex; align-items: center; justify-content: space-between; gap: 12px 18px; flex-wrap: wrap; margin-top: 18px; }
+.intl-row .q { font-size: 15px; font-weight: 600; }
+.seg.seg2 { grid-template-columns: 1fr 1fr; width: 260px; max-width: 100%; }
+.seg.seg2 label { min-height: 50px; }
+
+/* searchable program picker */
+.combo { position: relative; }
+.combo input { padding-right: 46px; }
+.combo-clear {
+  position: absolute; right: 8px; top: 10px;
+  width: 36px; height: 36px; border: 0; border-radius: 18px; background: #e9eef4;
+  color: var(--muted); font-size: 22px; line-height: 1;
+}
+.combo-list {
+  list-style: none; margin: 6px 0 0; padding: 6px 0;
+  max-height: 320px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background: #fff; border: 1.5px solid var(--line); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(16,24,40,.12);
+}
+.combo-list li { padding: 13px 16px; font-size: 18px; cursor: pointer; }
+.combo-list li + li { border-top: 1px solid #eef2f6; }
+.combo-list li.act, .combo-list li:active { background: #eaf3fb; }
+.combo-list li.undecided { color: var(--muted); font-style: italic; }
+.combo-list li.none { color: var(--muted); cursor: default; }
+.combo-list mark { background: none; color: var(--liu-blue-deep); font-weight: 700; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg label {
   display: flex; align-items: center; justify-content: center; text-align: center;
@@ -124,13 +150,17 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--n
 .submit:active { transform: translateY(1px); background: var(--liu-gold-deep); }
 .err { color: var(--danger); font-weight: 600; text-align: center; margin: 0 0 12px; min-height: 1.4em; }
 
+/* Staff entry: the lock in the header's top-right corner. A student who taps
+   it only meets the PIN pad. */
+.top { position: relative; }
 .lock {
-  position: fixed; right: calc(env(safe-area-inset-right) + 14px); bottom: calc(env(safe-area-inset-bottom) + 14px);
-  width: 44px; height: 44px; border-radius: 22px; border: 0;
-  background: rgba(27,58,92,.06); color: rgba(27,58,92,.35);
+  position: absolute; right: calc(env(safe-area-inset-right) + 14px); top: calc(env(safe-area-inset-top) + 14px);
+  width: 46px; height: 46px; border-radius: 23px; border: 1.5px solid rgba(255,255,255,.45);
+  background: rgba(255,255,255,.16); color: #fff;
   display: grid; place-items: center;
 }
-.lock svg { width: 20px; height: 20px; }
+.lock:active { background: rgba(255,255,255,.3); }
+.lock svg { width: 21px; height: 21px; }
 
 /* ---------- thank-you ---------- */
 .thanks {
@@ -212,6 +242,9 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
 <!-- ======================= STUDENT FORM ======================= -->
 <div id="formView">
   <header class="top">
+    <button type="button" class="lock" id="lockBtn" aria-label="Staff">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+    </button>
     <img class="brand" src="liu-logo-white.png" alt="Long Island University">
     <h1 id="heading">Let's stay in touch</h1>
     <p id="subheading">Tell us a little about yourself</p>
@@ -240,6 +273,17 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
           <input type="radio" name="fs_type" id="t_trn" value="Transfer"><label for="t_trn">Transfer student</label>
           <input type="radio" name="fs_type" id="t_gra" value="Graduate"><label for="t_gra">Graduate student</label>
         </div>
+        <div class="intl-row">
+          <span class="q" id="intlQ">Are you an international student?</span>
+          <div class="seg seg2" role="radiogroup" aria-labelledby="intlQ">
+            <input type="radio" name="fs_intl" id="i_yes" value="yes"><label for="i_yes">Yes</label>
+            <input type="radio" name="fs_intl" id="i_no" value="no"><label for="i_no">No</label>
+          </div>
+        </div>
+        <div class="grid" id="countryWrap" style="margin-top:16px" hidden>
+          <label class="f wide"><span>Country</span>
+            <input type="text" name="fs_country" id="country" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" maxlength="60"></label>
+        </div>
         <div class="grid" style="margin-top:18px">
           <label class="f"><span id="schoolLabel">Current school</span>
             <input type="text" name="fs_school" id="high_school" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" maxlength="120"></label>
@@ -249,8 +293,16 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
             <select name="fs_term" id="admit_term"></select></label>
           <label class="f" id="campusWrap"><span>Campus</span>
             <select name="fs_campus" id="campus"></select></label>
-          <label class="f wide"><span>What would you like to study?</span>
-            <input type="text" name="fs_major" id="intended_major" autocomplete="off" autocapitalize="sentences" autocorrect="off" spellcheck="false" maxlength="120"></label>
+          <div class="wide" id="majorWrap">
+            <label class="f" for="intended_major"><span>What would you like to study?</span></label>
+            <div class="combo">
+              <input type="text" name="fs_major" id="intended_major" placeholder="Search programs" role="combobox"
+                     aria-autocomplete="list" aria-expanded="false" aria-controls="majorList"
+                     autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="120">
+              <button type="button" class="combo-clear" id="majorClear" aria-label="Clear" hidden>×</button>
+              <ul class="combo-list" id="majorList" role="listbox" hidden></ul>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -280,9 +332,6 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     </form>
   </main>
 
-  <button class="lock" id="lockBtn" aria-label="Staff">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-  </button>
 </div>
 
 <!-- ======================= THANK YOU ======================= -->
@@ -365,6 +414,7 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     ['city', 'City'],
     ['state', 'State'],
     ['postal', 'ZIP'],
+    ['country', 'Country'],
     ['comment', 'Comment']
   ];
   var CAMPUSES = ['Brooklyn', 'Post', 'Global', 'Riverhead', 'Hudson', 'Brentwood', 'College of Veterinary Medicine'];
@@ -456,13 +506,14 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   }
   function termOptions() {
     // Future terms only: Spring starts ~Jan 20, Summer ~May 15, Fall ~Sep 1.
+    // Runs six years out (2026 → Fall 2032) and rolls forward with the calendar.
     var now = new Date(), y = now.getFullYear(), out = [['', 'Not sure yet']];
-    for (var yy = y; yy <= y + 3; yy++) {
+    for (var yy = y; yy <= y + 6; yy++) {
       [['Spring', 0, 20], ['Summer', 4, 15], ['Fall', 8, 1]].forEach(function (t) {
         if (new Date(yy, t[1], t[2]) > now) out.push([t[0] + ' ' + yy, t[0] + ' ' + yy]);
       });
     }
-    return out.slice(0, 10);
+    return out;
   }
   function gradOptions() {
     var now = new Date(), y = now.getFullYear(), out = [['', 'Select…']];
@@ -483,13 +534,141 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     $('subheading').hidden = !settings.sub;
     $('campusWrap').hidden = !!settings.campus;
     $('addrCard').hidden = !settings.askAddress;
+    refreshMajorPool();
   }
 
-  // School label follows the student type.
+  // School label + program list follow the student type.
   Array.prototype.forEach.call(document.querySelectorAll('input[name=fs_type]'), function (r) {
     r.addEventListener('change', function () {
       $('schoolLabel').textContent = r.value === 'First-Year' ? 'High school' : 'Current or most recent college';
+      document.querySelector('#signup .seg').classList.remove('invalid');
+      refreshMajorPool();
     });
+  });
+  $('campus').addEventListener('change', refreshMajorPool);
+
+  // International: Yes shows Country, and turns the student type into
+  // Homebase's international admit type at save time (Intl First-Year, …).
+  var INTL_TYPE = { 'First-Year': 'Intl First-Year', 'Transfer': 'Intl Transfer', 'Graduate': 'Intl Graduate' };
+  function isIntl() { var r = document.querySelector('input[name=fs_intl]:checked'); return !!r && r.value === 'yes'; }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name=fs_intl]'), function (r) {
+    r.addEventListener('change', function () {
+      $('countryWrap').hidden = !isIntl();
+      if (!isIntl()) document.querySelector('#signup .seg').classList.remove('invalid');
+    });
+  });
+
+  // ---------- program picker ----------
+  // LIU's programs as Homebase's intake forms offer them (the applicant pool's
+  // programs for the current and prior cycle, retired ones removed), keyed by
+  // campus name → F (first-year) / T (transfer) / G (graduate + vet).
+  // Refreshed from Homebase DEV on 11/11/2026.
+  var PROGRAMS = {"Brooklyn":{"F":["Accounting BS","Acting Theater/Film/TV BFA","Applied Music BA","Artificial Intelligence BS","Biochemistry BS","Biology BS","Business Administration BBA","Communcatn Sci Disrders B.S.","Communication BA","Computer Science BS","Culinary Arts BS","Data Analytics BS","Digital Engineering BE","Early College Scholars","Early College Scholars-Roc Nat","Entrepreneurship BS","Exercise Sci & Wellnes BS","Fashion Merchandising & Mgt BS","Film and Television BFA","Finance BS","Global Studies BA","Health Science BS","Hospitality Management BS","Int Relations & Diplomacy BA","Int'l RelationsDiplomacy CRT","Journalism BA","Marketing BS","Media Arts BA","Music Tech  Ent & Prod BFA","Nursing BS","Occupational Therapy BS/MS","Pharmacy Professional PharmD","Political Science BA","Psychology BA","Respiratory Care BS","Smart Scholars Early College","Social Science BA","Social Work BS","Sports Comm & Marketing BA","Sports Management BS","Summer Honors Institute","Theatre Arts BFA","Undeclared Lib Arts&Sci Ugrad","Veterinary Technology BS","Vocal Performance BM"],"T":["Accelerated Nursing BS","Accounting BS","Acting Theater/Film/TV BFA","Applied Music BA","Artificial Intelligence BS","Biochemistry BS","Biology BS","Business Administration BBA","Communcatn Sci Disrders B.S.","Communication BA","Computer Science BS","Culinary Arts BS","Data Analytics BS","Digital Engineering BE","Early College Scholars","Early College Scholars-Roc Nat","Entrepreneurship BS","Exercise Sci & Wellnes BS","Fashion Merchandising & Mgt BS","Film and Television BFA","Finance BS","Global Studies BA","Health Science BS","Hospitality Management BS","Int Relations & Diplomacy BA","Int'l RelationsDiplomacy CRT","Journalism BA","Marketing BS","Media Arts BA","Music Tech  Ent & Prod BFA","Nursing BS","Occupational Therapy BS/MS","Pharmacy Professional PharmD","Political Science BA","Psychology BA","Respiratory Care BS","Smart Scholars Early College","Social Science BA","Social Work BS","Sports Comm & Marketing BA","Sports Management BS","Summer Honors Institute","Theatre Arts BFA","Undeclared Lib Arts&Sci Ugrad","Veterinary Technology BS","Vocal Performance BM"],"G":["Artificial Intelligence MS","Biology MS","Business Administration MBA","Business MBA","Clinical Psychology PhD","Computational Sci & AI PHD","Computer Science MS","Creative Writing & Publsh MFA","Data Anal & Strat Bus Intel MS","Drug Regulatory Affairs MS","Exercise Science MS","Family Nurse Practitioner MS","Family Nurse Practitnr Cert.","Health Administration MPA","Marriage and Family Therapy MS","Marriage and Family Therpy CRT","Mental Health Counseling Cert","Mental Health Counseling MS","Pharmaceutical Sciences PhD","Pharmaceutics MS","Pharmacology/Toxicology MS","Pharmacy Administration MS","Physical Therapy DPT","Physician Assistant MS","Psychology MA","Public Administration MPA","Public Health MPH","School Psychologist MSE","Social Work  DSW","Social Work MSW","Speech-Language Pathology MS","Sports Management MS","United Nations Adv Certificate","Writing and Producing TV MFA"]},"Global":{"F":["Global Studies BA"],"T":["Global Studies BA"]},"Hudson":{"G":["Bilingual Ext Schl Couns CRT","Business Administration MBA","Business of Pharm/Biotech","Childhd Ed & Stu w/Dis All MSE","Childhood Ed and TESOL MSED","Childhood Education MSED","Childhood Special Ed MSED","Chldhd Ed & Lit (all gr) MSE","Crisis Management","Early Childhd Educatn ADV CRT","Early Childhd/Spec Ed MSED","Early Chld/Lit All Grades MSED","Educational Leadership ADV CRT","Educational Leadership MSED","Healthcare Sector Mgtmnt CRT","Marr/Fam Ther w/ Diag Priv MS","Mental Health Cnslng ADV CERT","Mental Health Counseling MS","Mid Chldhd Mth&Adol Mth MSED","Mid Chldhd SST & Adol SST MSE","Non-Degree Studies","Pharmaceutics MS","School Counselor MSED","School Psychologist MSED","Spec Ed: Gr 5-12 ENG MSED","Stud w/Dis (All grades)ADV CRT","Studnts with Dis PreK-12  MSED","SWD PreK -12 and Literacy All","Tching Lit All Grades  ADV CRT","Teaching Literacy 5-12 ADV CRT","Tesol (All Grades) ADV CRT","Tesol (All Grades) MSED"]},"Post":{"F":["Accountancy BS","Accounting BS","Adol Ed: Biology BS","Adol English Ed/SWD(All Gr) BS","Adol Math Ed/SWD (All Grades)","Adol Soc Stud Ed/SWD (all)","Adol. Educ: Mathematics  B.S.","Artificial Intelligence BS","Arts Management BFA","Biology BS","Biomed Sci:Clin Lab Sci-G BS","Broadcasting BFA","Business Administration BBA","Business Administration BS","Chemistry B.A.","Childhood Ed/SWD BS","Childhood/Early Childhood BS","Communications BS","Computer Science BS","Criminal Justice BA","Culinary Arts BS","Data Analytics BS","Digital Arts and Design BFA","Digital Engineering BE","Digital Game Design/Dev BFA","Early Childhood/SWD BS","Entrepreneurship BS","Exercise Sci & Wellnes BS","Fashion Merchandising & Mgt BS","Film and Television BFA","Film BFA","Finance BS","Forensic Science BS","Global Studies BA","Health Sciences BS","Hlth Ed & Phys Ed BS","Int Relations & Diplomacy BA","Journalism BFA","Marketing BS","Mathematics BS","Music Education B-12 BM","Music Tech  Ent & Prod BFA","Nursing BS","Nutrition and Dietetics BS","Pharmacy Professional PharmD","Political Science BA","Post Visiting Undergraduate","Psychology BA","Radiologic Technology BS","Social Work BS","Speech Lang Path and Audio BS","Sports Management BS","Theatre Arts BFA","Undeclared","Undeclared Major","Undeclared: Pre-Law","Veterinary Technology BS"],"T":["Accountancy BS","Accounting BS","Adol Ed: Biology BS","Adol English Ed/SWD(All Gr) BS","Adol Math Ed/SWD (All Grades)","Adol Soc Stud Ed/SWD (all)","Adol. Educ: Mathematics  B.S.","Artificial Intelligence BS","Arts Management BFA","Biology BS","Biomed Sci:Clin Lab Sci-G BS","Broadcasting BFA","Business Administration BBA","Business Administration BS","Chemistry B.A.","Childhood Ed/SWD BS","Childhood/Early Childhood BS","Communications BS","Computer Science BS","Criminal Justice BA","Culinary Arts BS","Data Analytics BS","Digital Arts and Design BFA","Digital Engineering BE","Digital Game Design/Dev BFA","Early Childhood/SWD BS","Entrepreneurship BS","Exercise Sci & Wellnes BS","Fashion Merchandising & Mgt BS","Film and Television BFA","Film BFA","Finance BS","Forensic Science BS","Global Studies BA","Health Sciences BS","Hlth Ed & Phys Ed BS","Int Relations & Diplomacy BA","Journalism BFA","Marketing BS","Mathematics BS","Music Education B-12 BM","Music Tech  Ent & Prod BFA","Nursing BS","Nutrition and Dietetics BS","Pharmacy Professional PharmD","Political Science BA","Post Visiting Undergraduate","Psychology BA","Radiologic Technology BS","Social Work BS","Speech Lang Path and Audio BS","Sports Management BS","Theatre Arts BFA","Undeclared","Undeclared Major","Undeclared: Pre-Law","Veterinary Technology BS"],"G":["Accountancy MS","Adolescence Education 7-12 MS","Archives & Records Mgt. Certif","Artificial Intelligence MS","Behavior Analysis MA","Biology MS","Biomedical Sciences MS","Business Administration MBA","Childhood Ed/SWD AllGrades MS","Clinical Art Ther & Couns MA","Clinical Lab Sciences MS","Clinical Ment Hlth Coun ADVCRT","Clinical Mental Hlth Couns MS","Comp Sci/Dig Fluency ADV CRT","Criminal Justice MS","Data Anal & Strat Bus Intel MS","Early Childhood/Childhood MS","Educational Leadership ADV CRT","Educational Leadership MSED","Family Nurse Practitioner MS","Genetic Counseling MS","Health Administration MHA","Information Studies PhD","Lib Info Sci/Schl Lib Media MS","Library and Info Science MS","Library Sci Non-Degree Studies","Literacy (All Grades) MSED","Management Engineering M.S.","Museum Studies M.A.","Physical Therapy DPT","Psychology - Clinical-PsyD","Public Library Admin ADV CRT","Reg Dietitian Nutritionist MS","School Counseling MS","School Dist Busn Ldr ADV CRT","School Dist Busn Ldr MSED","Social Work MSW","Special Education MSED","Speech-Language Pathology MA","Sports Management MS","Stdnt w/ Disabilites (All)MSED","Transformational Leadershp EdD"]},"Riverhead":{"F":["Childhood Education BS","Communication Stud - New Media","Riverhead Visiting (UG)"],"T":["Childhood Education BS","Communication Stud - New Media","Riverhead Visiting (UG)"],"G":["Childhood Education MS","Non-Degree Studies","Teach Students w/Disabil MS"]},"College of Veterinary Medicine":{"G":["Comp Biomed & Vet Sciences MS","Comp Biomedical Vet Sci PHD","Veterinary Medicine DVM"]}};
+  var UNDECIDED = 'Undecided';
+  var majorPool = [];
+  function normText(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function refreshMajorPool() {
+    var typeEl = document.querySelector('input[name=fs_type]:checked');
+    var fams = typeEl ? [{ 'First-Year': 'F', 'Transfer': 'T', 'Graduate': 'G' }[typeEl.value]] : ['F', 'T', 'G'];
+    var campus = settings.campus || $('campus').value;
+    function collect(campuses) {
+      var seen = {}, out = [];
+      campuses.forEach(function (c) {
+        fams.forEach(function (f) {
+          ((PROGRAMS[c] || {})[f] || []).forEach(function (p) {
+            if (!seen[p]) { seen[p] = 1; out.push(p); }
+          });
+        });
+      });
+      return out;
+    }
+    var pool = campus ? collect([campus]) : [];
+    if (!pool.length) pool = collect(Object.keys(PROGRAMS));   // campus with no list → every campus
+    pool.sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1; });
+    majorPool = pool.map(function (p) { return { name: p, norm: normText(p) }; });
+    if (!$('majorList').hidden) renderMajors();
+  }
+
+  var majorAct = -1;
+  function majorMatches() {
+    var q = normText($('intended_major').value);
+    if (!q) return majorPool;
+    var words = q.split(' ');
+    return majorPool.filter(function (p) {
+      return words.every(function (w) { return p.norm.indexOf(w) >= 0; });
+    });
+  }
+  function highlight(name) {
+    var words = normText($('intended_major').value).split(' ').filter(Boolean);
+    var safe = esc(name);
+    if (!words.length) return safe;
+    var re = new RegExp('(' + words.map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')', 'gi');
+    return safe.replace(re, '<mark>$1</mark>');
+  }
+  function renderMajors() {
+    var list = $('majorList'), m = majorMatches(), q = val('intended_major');
+    var html = '';
+    if (!q) html += '<li class="undecided" role="option" data-v="' + UNDECIDED + '">Undecided / not sure yet</li>';
+    m.forEach(function (p, i) {
+      html += '<li role="option" data-v="' + esc(p.name) + '">' + highlight(p.name) + '</li>';
+    });
+    if (q && !m.length) html += '<li class="none">No match — we’ll note what you typed</li>';
+    list.innerHTML = html;
+    majorAct = -1;
+    list.hidden = false;
+    list.scrollTop = 0;
+    $('intended_major').setAttribute('aria-expanded', 'true');
+  }
+  function closeMajors() {
+    $('majorList').hidden = true;
+    $('intended_major').setAttribute('aria-expanded', 'false');
+  }
+  function pickMajor(v) {
+    $('intended_major').value = v;
+    $('majorClear').hidden = !v;
+    closeMajors();
+    $('intended_major').blur();
+    bumpFormIdle();
+  }
+  $('intended_major').addEventListener('focus', function () {
+    renderMajors();
+    // keep the list clear of the on-screen keyboard
+    setTimeout(function () { $('majorWrap').scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 350);
+  });
+  $('intended_major').addEventListener('input', function () {
+    $('majorClear').hidden = !$('intended_major').value;
+    renderMajors();
+  });
+  $('intended_major').addEventListener('blur', function () { setTimeout(closeMajors, 150); });
+  $('intended_major').addEventListener('keydown', function (ev) {
+    var items = $('majorList').querySelectorAll('li[data-v]');
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      if (!items.length) return;
+      majorAct = (majorAct + (ev.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      Array.prototype.forEach.call(items, function (li, i) { li.classList.toggle('act', i === majorAct); });
+      items[majorAct].scrollIntoView({ block: 'nearest' });
+    } else if (ev.key === 'Enter') {
+      ev.preventDefault();                       // never submit the form from here
+      if (majorAct >= 0 && items[majorAct]) pickMajor(items[majorAct].getAttribute('data-v'));
+      else if (items.length === 1 && val('intended_major')) pickMajor(items[0].getAttribute('data-v'));
+      else { closeMajors(); $('intended_major').blur(); }
+    } else if (ev.key === 'Escape') {
+      closeMajors();
+    }
+  });
+  // mousedown/touch, not click: picking must land before the input's blur closes the list
+  $('majorList').addEventListener('mousedown', function (ev) { ev.preventDefault(); });
+  $('majorList').addEventListener('click', function (ev) {
+    var li = ev.target.closest('li[data-v]');
+    if (li) pickMajor(li.getAttribute('data-v'));
+  });
+  $('majorClear').addEventListener('mousedown', function (ev) { ev.preventDefault(); });
+  $('majorClear').addEventListener('click', function () {
+    $('intended_major').value = '';
+    $('majorClear').hidden = true;
+    $('intended_major').focus();
+    renderMajors();
   });
 
   // ---------- submit ----------
@@ -512,6 +691,15 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       return;
     }
     var typeEl = document.querySelector('input[name=fs_type]:checked');
+    var intl = isIntl();
+    if (intl && !typeEl) {
+      // Homebase's international admit types need the level too
+      var seg = document.querySelector('#signup .seg');
+      seg.classList.add('invalid');
+      $('formErr').textContent = 'Please choose high school, transfer, or graduate student.';
+      seg.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
     var entry = {
       id: uid(),
       created: new Date().toISOString(),
@@ -521,7 +709,9 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       last_name: val('last_name'),
       email: val('email').toLowerCase(),
       phone: val('phone'),
-      admit_type: typeEl ? typeEl.value : '',
+      admit_type: typeEl ? (intl ? INTL_TYPE[typeEl.value] : typeEl.value) : '',
+      international: intl,
+      country: intl ? val('country') : '',
       high_school: val('high_school'),
       grad_year: $('grad_year').value,
       admit_term: $('admit_term').value,
@@ -545,6 +735,10 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     $('formErr').textContent = '';
     Array.prototype.forEach.call(document.querySelectorAll('.invalid'), function (el) { el.classList.remove('invalid'); });
     $('schoolLabel').textContent = 'Current school';
+    $('countryWrap').hidden = true;
+    $('majorClear').hidden = true;
+    closeMajors();
+    refreshMajorPool();
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     window.scrollTo(0, 0);
   }
@@ -694,7 +888,8 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
         var fresh = g.items.filter(function (e) { return !e.exported; }).length;
         var rows = g.items.map(function (e) {
           var d = new Date(e.created);
-          return '<tr><td>' + esc(e.first_name + ' ' + e.last_name) + '</td>' +
+          return '<tr><td>' + esc(e.first_name + ' ' + e.last_name) +
+            (e.international ? ' <span class="pill">Intl</span>' : '') + '</td>' +
             '<td>' + esc(e.email) + '</td>' +
             '<td>' + fmtDate(d) + ' ' + fmtTime(d) + '</td>' +
             (e.exported ? '<td class="sent">Exported</td>' : '<td></td>') +
