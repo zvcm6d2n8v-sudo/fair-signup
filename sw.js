@@ -1,7 +1,7 @@
 // Offline cache for the fair sign-up page. Serves from the cache first so the
 // page opens with no Wi-Fi; refreshes the cache in the background when online,
 // so an updated page shows up on the next launch. Bump VERSION to force it.
-var VERSION = 'fair-signup-v7';
+var VERSION = 'fair-signup-v9';
 var FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-512.png', './liu-logo-white.png', './public-sans.woff2', './zipcodes.json'];
 
 self.addEventListener('install', function (e) {

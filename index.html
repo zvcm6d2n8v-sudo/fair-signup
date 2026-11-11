@@ -283,6 +283,20 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--n
 .ev-form .err { text-align: left; margin: 12px 0 6px; }
 input[type=date] { width: 100%; font-size: 18px; font-weight: 500; min-height: 52px; padding: 12px 14px; border: 1px solid var(--field-border); border-radius: var(--r-sm); background: #fff; color: var(--navy); -webkit-appearance: none; appearance: none; font-family: var(--font); }
 .group.current { border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
+/* folding: the Form card and the list of other events start closed */
+details > summary { list-style: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+details > summary::-webkit-details-marker { display: none; }
+.card.fold { padding-bottom: 0; }
+.card.fold > summary { display: flex; align-items: center; justify-content: space-between; margin: -20px -22px 0; padding: 14px 22px; min-height: 56px; }
+.card.fold > summary h2 { margin: 0; padding: 0; border: 0; font-size: 17px; font-weight: 600; color: var(--navy); }
+.card.fold[open] { padding-bottom: 22px; }
+.card.fold[open] > summary { border-bottom: 1px solid var(--line-soft); margin-bottom: 18px; }
+.fold-chev, .card.fold > summary::after { content: ''; width: 10px; height: 10px; border-right: 2px solid var(--navy); border-bottom: 2px solid var(--navy); transform: rotate(45deg); margin: -4px 6px 0 12px; transition: transform .15s ease; flex: none; }
+.card.fold[open] > summary::after, details[open] > summary .fold-chev { transform: rotate(225deg); margin-top: 4px; }
+.others { margin-top: 6px; }
+.others > summary { display: flex; align-items: center; padding: 12px 4px; min-height: 52px; font-size: 17px; font-weight: 600; color: var(--navy); }
+.others > summary .grow { flex: 1; }
+.others[open] > summary { margin-bottom: 8px; }
 .group-meta { width: 100%; color: var(--muted); font-size: 14px; margin: -2px 0 4px; }
 .pill.cur { background: var(--navy); color: #fff; }
 .ver { text-align: center; color: var(--muted); font-size: 13px; margin-top: 18px; }
@@ -496,8 +510,8 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     <div id="groups"></div>
   </section>
 
-  <section class="card">
-    <h2>Form</h2>
+  <details class="card fold" id="formSettings">
+    <summary><h2>Form</h2></summary>
     <div class="grid">
       <label class="f"><span>Heading</span>
         <input type="text" id="setHeading" maxlength="60" autocomplete="off" autocorrect="off"></label>
@@ -507,8 +521,8 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
         <label class="toggle"><input type="checkbox" id="setAddr"> Ask for mailing address</label>
       </div>
     </div>
-  </section>
-  <p class="ver">Version 7 · 11/11/2026</p>
+  </details>
+  <p class="ver">Version 9 · 11/11/2026</p>
 </div>
 
 <div class="toast" id="toast" hidden></div>
@@ -773,6 +787,58 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     bumpFormIdle();
   });
 
+  // Phone: (XXX) XXX-XXXX as it is typed, exactly as Homebase formats it.
+  // fmtPhone + reformat are copied verbatim from Homebase's static/hb_entry.js
+  // (11/11/2026) — keep the two in step if Homebase's rule changes.
+  function fmtPhone(raw) {
+    if (/^\s*\+/.test(raw)) return raw;
+    var d = (raw || '').replace(/\D/g, '');
+    if (d.length === 11 && d.charAt(0) === '1') d = d.slice(1);
+    if (d.length > 10) return raw;
+    if (d.length > 6) return '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6);
+    if (d.length > 3) return '(' + d.slice(0, 3) + ') ' + d.slice(3);
+    if (d.length > 0) return '(' + d;
+    return '';
+  }
+
+  /* Re-write a field's value while keeping the caret where the typist
+     expects it: count the digits before the caret and put it back after the
+     same digit in the new text. Without this, typing into the middle of a
+     formatted number throws the caret to the end on every keystroke. */
+  function reformat(el, fn) {
+    var before = el.value, caret = el.selectionStart, caretEnd = el.selectionEnd;
+    var digitsBefore = (before.slice(0, caret).match(/\d/g) || []).length;
+    var after = fn(before);
+    if (after === before) return;
+    el.value = after;
+    if (el.selectionStart === null) return;
+    // A SAME-LENGTH rewrite changed characters in place (capWords only
+    // upper-cases letters), so every position still means the same thing:
+    // the caret stays exactly where it was. The digit count below is for
+    // rewrites that insert or drop characters (the phone's parens and dash).
+    // Without this, a home address broke (Frederick, 2026-09-24: "the text
+    // input will oddly shift backwards to an earlier part of the text"):
+    // typing "123 main" re-cased the "m" and the digit count put the caret
+    // back after the third DIGIT — straight after "123" — so the next letters
+    // landed mid-address. Names have no digits, which is why it was only
+    // "sometimes".
+    if (after.length === before.length) {
+      try { el.setSelectionRange(caret, caretEnd); } catch (e) { /* not a text input */ }
+      return;
+    }
+    var pos = after.length, seen = 0;
+    for (var i = 0; i < after.length; i++) {
+      if (/\d/.test(after.charAt(i))) {
+        seen++;
+        if (seen === digitsBefore) { pos = i + 1; break; }
+      }
+    }
+    if (digitsBefore === 0) pos = Math.min(caret, after.length);
+    try { el.setSelectionRange(pos, pos); } catch (e) { /* not a text input */ }
+  }
+  $('phone').addEventListener('input', function () { reformat($('phone'), fmtPhone); });
+  $('phone').addEventListener('blur', function () { $('phone').value = fmtPhone($('phone').value); });
+
   // (4) ZIP first: city and state fill in from the US ZIP list (GeoNames,
   // the table Homebase's planner bundles), loaded once and kept offline.
   var zipIndex = null, zipLoading = null, zipFilled = { city: false, state: false };
@@ -791,7 +857,13 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   }
   function zipLookup() {
     var v = $('postal').value.trim(), m = /^(\d{5})(?:-?\d{4})?$/.exec(v);
-    if (!m) return;
+    if (!m) {
+      // ZIP deleted or no longer whole: what a ZIP filled in goes with it
+      // (a city or state the student typed themselves stays)
+      if (zipFilled.city) { $('city').value = ''; zipFilled.city = false; }
+      if (zipFilled.state) { $('state').value = ''; zipFilled.state = false; }
+      return;
+    }
     (loadZips() || Promise.resolve()).then(function () {
       var place = zipIndex && zipIndex[parseInt(m[1], 10)];
       if (!place) return;
@@ -1018,7 +1090,7 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       first_name: tidyName(val('first_name')),
       last_name: tidyName(val('last_name')),
       email: val('email').toLowerCase(),
-      phone: val('phone'),
+      phone: fmtPhone(val('phone')),
       admit_type: typeEl ? (intl ? INTL_TYPE[typeEl.value] : typeEl.value) : '',
       international: intl,
       country: intl ? val('country') : '',
@@ -1299,7 +1371,8 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       renderCurrent();
       var host = $('groups');
       if (!lastGroups.length) { host.innerHTML = '<div class="empty">No events yet</div>'; return; }
-      host.innerHTML = lastGroups.map(function (g, gi) {
+      var curHtml = '', otherHtml = '', nOther = 0, otherFresh = 0;
+      lastGroups.forEach(function (g, gi) {
         var isCur = g.ev.id === settings.currentEvent;
         var fresh = g.items.filter(function (e) { return !e.exported; }).length;
         var rows = g.items.map(function (e) {
@@ -1312,7 +1385,7 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
             '<td style="text-align:right"><button class="x" data-del="' + esc(e.id) + '" aria-label="Delete">×</button></td></tr>';
         }).join('');
         var has = g.items.length > 0;
-        return '<div class="group' + (isCur ? ' current' : '') + '">' +
+        var html = '<div class="group' + (isCur ? ' current' : '') + '">' +
           '<div class="group-head"><h3>' + esc(g.name) +
             (isCur ? '<span class="pill cur">Current</span>' : '') +
             '<span class="pill">' + g.items.length + '</span>' +
@@ -1327,9 +1400,16 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
           (has ? '<table><thead><tr><th>Name</th><th>Email</th><th>Signed up</th><th></th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
                : '<div class="empty">No sign-ups yet</div>') +
           '</div>';
-      }).join('');
+        if (isCur) curHtml += html; else { otherHtml += html; nOther++; otherFresh += fresh; }
+      });
+      host.innerHTML = curHtml +
+        (nOther ? '<details class="others" id="otherEvents"' + (othersOpen ? ' open' : '') + '><summary><span class="grow">Other events' +
+          '<span class="pill">' + nOther + '</span>' + (otherFresh ? '<span class="pill new">' + otherFresh + ' new</span>' : '') +
+          '</span><span class="fold-chev"></span></summary>' + otherHtml + '</details>' : '');
+      if ($('otherEvents')) $('otherEvents').addEventListener('toggle', function () { othersOpen = $('otherEvents').open; });
     });
   }
+  var othersOpen = false;      // the other-events list starts closed; it stays as staff leave it while they work
 
   $('groups').addEventListener('click', function (ev) {
     var b = ev.target.closest('button'); if (!b) return;
