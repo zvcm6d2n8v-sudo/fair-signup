@@ -92,7 +92,10 @@ input, select, textarea, button { font-family: var(--font); }
   display: flex; align-items: center; justify-content: center;
   -webkit-appearance: none; appearance: none; line-height: 0;
 }
+.lock { position: relative; }
 .lock:active { background: rgba(255,255,255,.3); }
+/* sign-ups from an earlier event still waiting to be exported */
+.lock.alert::after { content: ''; position: absolute; top: -2px; right: -2px; width: 14px; height: 14px; border-radius: 7px; background: var(--liu-gold); border: 2px solid #fff; }
 .lock svg { display: block; width: 20px; height: 20px; }
 
 /* ---------- page heading ---------- */
@@ -118,7 +121,7 @@ main.form-wrap { max-width: 900px; margin: 0 auto; padding: 22px 20px 120px; }
 }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
 .grid .wide { grid-column: 1 / -1; }
-.grid.addr { grid-template-columns: 2fr 1fr .8fr; }
+.grid.addr { grid-template-columns: .9fr 2fr 1fr; }
 @media (max-width: 640px) {
   .grid, .grid.addr { grid-template-columns: 1fr; }
 }
@@ -172,6 +175,13 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--n
 .seg.seg2 label { min-height: 48px; }
 
 /* ---------- searchable program picker ---------- */
+.email-help { margin-top: -6px; }
+.chips { display: flex; flex-wrap: wrap; margin: -4px; }
+.chip { margin: 4px; min-height: 44px; padding: 8px 14px; border-radius: 22px; border: 1px solid var(--field-border); background: #fff; color: var(--navy); font-size: 16px; font-weight: 500; -webkit-appearance: none; appearance: none; }
+.chip:active { background: var(--navy); color: #fff; }
+.email-fix { display: flex; align-items: center; flex-wrap: wrap; margin-top: 6px; padding: 8px 12px; border-radius: var(--r-sm); background: #fff4d6; color: #6b4a00; font-weight: 600; font-size: 16px; }
+.email-fix span { margin-right: 8px; }
+.chip.fix { background: var(--liu-gold-shade); border-color: var(--liu-gold-shade); color: #fff; font-weight: 600; text-shadow: 0 1px 1px rgba(0,0,0,.2); }
 .combo { position: relative; }
 .combo input { padding-right: 50px; }
 .combo-clear {
@@ -265,6 +275,16 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--n
 .row > * { margin: 5px; }
 .toggle { display: flex; align-items: center; font-weight: 600; font-size: 15px; color: var(--navy); }
 .toggle input { width: 22px; height: 22px; margin: 0 10px 0 0; accent-color: var(--navy); }
+.cur-name { font-size: 24px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+.cur-meta { margin-top: 6px; color: var(--muted); font-size: 16px; }
+.cur-meta .sep, .group-meta .sep { margin: 0 8px; opacity: .6; }
+.cur-empty { margin: 0 0 12px; color: var(--muted); font-size: 17px; }
+.ev-form { margin-top: 4px; }
+.ev-form .err { text-align: left; margin: 12px 0 6px; }
+input[type=date] { width: 100%; font-size: 18px; font-weight: 500; min-height: 52px; padding: 12px 14px; border: 1px solid var(--field-border); border-radius: var(--r-sm); background: #fff; color: var(--navy); -webkit-appearance: none; appearance: none; font-family: var(--font); }
+.group.current { border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
+.group-meta { width: 100%; color: var(--muted); font-size: 14px; margin: -2px 0 4px; }
+.pill.cur { background: var(--navy); color: #fff; }
 .ver { text-align: center; color: var(--muted); font-size: 13px; margin-top: 18px; }
 
 .group { border: 1px solid var(--card-border); border-radius: var(--r-sm); margin-bottom: 14px; overflow: hidden; }
@@ -324,6 +344,10 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
             <input type="email" name="fs_mail" id="email" required inputmode="email" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="120"></label>
           <label class="f"><span>Mobile phone</span>
             <input type="tel" name="fs_tel" id="phone" inputmode="tel" autocomplete="off" maxlength="30"></label>
+          <div class="wide email-help" id="emailHelp" hidden>
+            <div class="chips" id="emailChips"></div>
+            <div class="email-fix" id="emailFix" hidden><span id="emailFixText"></span><button type="button" class="chip fix" id="emailFixBtn">Yes, fix it</button></div>
+          </div>
         </div>
       </section>
 
@@ -374,12 +398,12 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
             <input type="text" name="fs_street" id="address" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="120"></label>
         </div>
         <div class="grid addr" style="margin-top:16px">
+          <label class="f"><span>ZIP</span>
+            <input type="text" name="fs_zip" id="postal" inputmode="numeric" autocomplete="off" maxlength="10"></label>
           <label class="f"><span>City</span>
             <input type="text" name="fs_city" id="city" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" maxlength="60"></label>
           <label class="f"><span>State</span>
             <input type="text" name="fs_state" id="state" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="30"></label>
-          <label class="f"><span>ZIP</span>
-            <input type="text" name="fs_zip" id="postal" inputmode="numeric" autocomplete="off" maxlength="10"></label>
         </div>
       </section>
 
@@ -400,7 +424,7 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   <img class="brand" src="liu-logo-white.png" alt="Long Island University">
   <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
   <h2 id="thanksName">Thank you!</h2>
-  <p>We'll be in touch soon.</p>
+  <p id="thanksSub">We'll be in touch soon.</p>
 </div>
 
 <!-- ======================= PIN ======================= -->
@@ -428,28 +452,63 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     </div>
   </div>
 
+  <section class="card" id="curCard">
+    <h2>Current event</h2>
+    <div id="curNone" hidden>
+      <p class="cur-empty">No event yet</p>
+      <button type="button" class="btn primary" id="startEvent">Start an event</button>
+    </div>
+    <div id="curShow" hidden>
+      <div class="cur-name" id="curName"></div>
+      <div class="cur-meta" id="curMeta"></div>
+      <div class="row" style="margin-top:12px">
+        <button type="button" class="btn primary" id="newEvent">New event</button>
+        <button type="button" class="btn" id="editEvent">Edit event</button>
+      </div>
+    </div>
+    <form id="evForm" class="ev-form" hidden autocomplete="off" novalidate>
+      <div class="grid">
+        <label class="f wide"><span>Event name <b>*</b></span>
+          <input type="text" id="evName" maxlength="80" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="e.g. Smith High School College Night"></label>
+        <label class="f wide"><span>School</span>
+          <input type="text" id="evSchool" maxlength="120" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" placeholder="e.g. Smith High School"
+                 title="Filled in for every high school student who signs up at this event (they can still change it). Leave blank at a college fair with many schools."></label>
+        <label class="f"><span>Event type</span>
+          <select id="evType"></select></label>
+        <label class="f"><span>Date</span>
+          <input type="date" id="evDate"></label>
+        <label class="f"><span>Counselor at this event <b>*</b></span>
+          <input type="text" id="evCounselor" list="counselorList" maxlength="60" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false">
+          <datalist id="counselorList"></datalist></label>
+        <label class="f"><span>Campus</span>
+          <select id="evCampus"></select></label>
+      </div>
+      <p class="err" id="evErr" role="alert"></p>
+      <div class="row">
+        <button type="submit" class="btn primary" id="evSave">Save event</button>
+        <button type="button" class="btn" id="evCancel">Cancel</button>
+      </div>
+    </form>
+  </section>
+
   <section class="card">
-    <h2>This event</h2>
+    <h2>Events and sign-ups</h2>
+    <div id="groups"></div>
+  </section>
+
+  <section class="card">
+    <h2>Form</h2>
     <div class="grid">
-      <label class="f wide"><span>Event name</span>
-        <input type="text" id="setEvent" maxlength="80" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="e.g. Smith High School fair"></label>
       <label class="f"><span>Heading</span>
         <input type="text" id="setHeading" maxlength="60" autocomplete="off" autocorrect="off"></label>
       <label class="f"><span>Subheading</span>
         <input type="text" id="setSub" maxlength="80" autocomplete="off" autocorrect="off"></label>
-      <label class="f"><span>Campus</span>
-        <select id="setCampus"></select></label>
-      <div class="f" style="display:flex;align-items:flex-end;padding-bottom:12px">
+      <div class="f wide">
         <label class="toggle"><input type="checkbox" id="setAddr"> Ask for mailing address</label>
       </div>
     </div>
   </section>
-
-  <section class="card">
-    <h2>Sign-ups</h2>
-    <div id="groups"></div>
-  </section>
-  <p class="ver">Version 4 · 11/11/2026</p>
+  <p class="ver">Version 7 · 11/11/2026</p>
 </div>
 
 <div class="toast" id="toast" hidden></div>
@@ -461,24 +520,24 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   // ---------- constants ----------
   // Header text is what Homebase's event-roster upload auto-matches
   // (Homebase CRM - Development/crm_app/app.py, _ROSTER_UPLOAD_FIELDS).
-  var COLUMNS = [
-    ['first_name', 'First name'],
-    ['last_name', 'Last name'],
-    ['email', 'Email'],
-    ['phone', 'Phone'],
-    ['admit_type', 'Student type'],
-    ['high_school', 'High school / college'],
-    ['grad_year', 'Graduation year'],
-    ['admit_term', 'Start term'],
-    ['campus', 'Campus'],
-    ['intended_major', 'Intended major'],
-    ['address', 'Street address'],
-    ['city', 'City'],
-    ['state', 'State'],
-    ['postal', 'ZIP'],
-    ['country', 'Country'],
-    ['comment', 'Comment']
-  ];
+  // LIU Recruit's ProspectImportTemplate — the exact columns, in the exact
+  // order, that Homebase's _build_recruit_comment_xlsx writes (crm_app/app.py).
+  var RECRUIT_HEADERS = ['FirstName', 'LastName', 'Email', 'Address1', 'Address2', 'City', 'State',
+    'ZipCode', 'HomePhone', 'CellPhone', 'Country', 'MostRecentSchool', 'CEEB',
+    'HSCity', 'HSState', 'AdmitType', 'AdmitTerm', 'RecruitStatus', 'Institution',
+    'Plan1Nm', 'MajorDescription', 'Comment'];
+  // Raw codes, never labels (Recruit rejects labels): ADMIT_TYPE_DECODE,
+  // _SEASON_TO_TERM_DIGIT and RECRUIT_INSTITUTION_CODES in app.py.
+  var ADMIT_TYPE_CODE = { 'First-Year': 'FRE', 'Transfer': 'TRN', 'Graduate': 'GRA',
+    'Intl First-Year': 'IFR', 'Intl Transfer': 'ITR', 'Intl Graduate': 'IGR' };
+  var SEASON_DIGIT = { 'Spring': '1', 'Summer': '2', 'Fall': '4' };
+  var INSTITUTION_LETTER = { 'Brooklyn': 'B', 'Post': 'P', 'Global': 'G', 'Hudson': 'H',
+    'Riverhead': 'R', 'College of Veterinary Medicine': 'V', 'Brentwood': 'T' };
+  // Homebase's own event types, most-used first (DEV events table, 11/11/2026).
+  var EVENT_TYPES = ['College Fair', 'High School Visit', 'Transfer Fair', 'On-Site', 'Classroom Visit',
+    'Table Visit', 'Campus Visit', 'Conference', 'NACAC', 'Other'];
+  // Homebase's default event comment (_EVENT_ADD_NOTE_DEFAULT).
+  var EVENT_COMMENT = 'Met student at {event_type}, provided information about the University.';
   var CAMPUSES = ['Brooklyn', 'Post', 'Global', 'Riverhead', 'Hudson', 'Brentwood', 'College of Veterinary Medicine'];
   var STAFF_IDLE_MS = 120000;   // staff screen locks itself after 2 minutes untouched
   var FORM_IDLE_MS = 90000;     // a half-filled form clears itself after 90 seconds untouched
@@ -512,10 +571,9 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   // ---------- settings (small, per device) ----------
   var DEFAULTS = {
     pin: '',
-    event: '',
+    currentEvent: '',
     heading: "Let's stay in touch!",
     sub: 'Tell us a little about yourself',
-    campus: '',          // '' = students choose
     askAddress: true
   };
   var settings = (function () {
@@ -528,8 +586,22 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   function saveSettings() {
     try { localStorage.setItem('fs_settings', JSON.stringify(settings)); } catch (e) {}
   }
-  function eventName() {
-    return (settings.event || '').trim() || ('Sign-ups ' + fmtDate(new Date()));
+  // ---------- events ----------
+  // Each event is its own list: name, Homebase event type, date, the counselor
+  // working it, and an optional fixed campus. Sign-ups carry the event's id.
+  function loadEvents() {
+    try { return JSON.parse(localStorage.getItem('fs_events') || '[]') || []; } catch (e) { return []; }
+  }
+  var events = loadEvents();
+  function saveEvents() { try { localStorage.setItem('fs_events', JSON.stringify(events)); } catch (e) {} }
+  function eventById(id) { for (var i = 0; i < events.length; i++) if (events[i].id === id) return events[i]; return null; }
+  function curEvent() { return eventById(settings.currentEvent || ''); }
+  function todayIso() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function isoToUs(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[2] + '/' + m[3] + '/' + m[1] : ''; }
+  function counselorsUsed() {
+    var seen = {}, out = [];
+    events.slice().reverse().forEach(function (e) { var c = (e.counselor || '').trim(); if (c && !seen[c.toLowerCase()]) { seen[c.toLowerCase()] = 1; out.push(c); } });
+    return out;
   }
 
   // ---------- storage (IndexedDB) ----------
@@ -588,17 +660,150 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     fillSelect($('admit_term'), termOptions(), true);
     fillSelect($('grad_year'), gradOptions(), true);
     fillSelect($('campus'), [['', 'Not sure yet']].concat(CAMPUSES.map(function (c) { return [c, c]; })), true);
-    fillSelect($('setCampus'), [['', 'Students choose']].concat(CAMPUSES.map(function (c) { return [c, c]; })), false);
+    fillSelect($('evCampus'), [['', 'Students choose']].concat(CAMPUSES.map(function (c) { return [c, c]; })), false);
+    fillSelect($('evType'), EVENT_TYPES.map(function (t) { return [t, t]; }), false);
   }
 
   function applySettings() {
     $('heading').textContent = settings.heading || DEFAULTS.heading;
     $('subheading').textContent = settings.sub || '';
     $('subheading').hidden = !settings.sub;
-    $('campusWrap').hidden = !!settings.campus;
+    var ce = curEvent();
+    $('campusWrap').hidden = !!(ce && ce.campus);
     $('addrCard').hidden = !settings.askAddress;
     refreshMajorPool();
+    presetType();
+    prefillSchool();
   }
+
+  // The event's school (a high school visit) is filled in for high school
+  // students — still editable. A transfer or graduate student's school is a
+  // college, so the prefill steps aside when they pick that type.
+  function eventSchool() { var ce = curEvent(); return (ce && ce.school) || ''; }
+  function prefillSchool() {
+    var sch = eventSchool(), typeEl = document.querySelector('input[name=fs_type]:checked');
+    var hsOrUnset = !typeEl || typeEl.value === 'First-Year';
+    if (sch && hsOrUnset && !$('high_school').value) $('high_school').value = sch;
+    if (sch && !hsOrUnset && $('high_school').value === sch) $('high_school').value = '';
+  }
+
+  // ---------- quicker answers ----------
+  // (1) A high school student's start term follows their graduation year —
+  // Class of 2027 → Fall 2027 — until they pick a term themselves.
+  var termAuto = false;
+  function termFromGrad() {
+    var y = $('grad_year').value, typeEl = document.querySelector('input[name=fs_type]:checked');
+    if (!/^\d{4}$/.test(y) || (typeEl && typeEl.value !== 'First-Year')) return;
+    if ($('admit_term').value && !termAuto) return;
+    var want = 'Fall ' + y, sel = $('admit_term');
+    if (Array.prototype.some.call(sel.options, function (o) { return o.value === want; })) { sel.value = want; termAuto = true; }
+  }
+  $('grad_year').addEventListener('change', termFromGrad);
+  $('admit_term').addEventListener('change', function () { termAuto = false; });
+
+  // (5) At a high school or classroom visit nearly everyone is a high school
+  // student: that answer starts chosen (still one tap to change).
+  function presetType() {
+    var ce = curEvent(), r = $('t_fre');
+    var on = !!(ce && (ce.type === 'High School Visit' || ce.type === 'Classroom Visit'));
+    if (on && !document.querySelector('input[name=fs_type]:checked')) {
+      r.checked = true; r.setAttribute('data-preset', '1');
+      $('schoolLabel').textContent = 'High school';
+      refreshMajorPool();
+    }
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name=fs_type]'), function (r) {
+    r.addEventListener('click', function () { $('t_fre').removeAttribute('data-preset'); });
+  });
+
+  // (6) Names typed all-lowercase or ALL-CAPS are tidied ("ana o'brien-lee"
+  // → "Ana O'Brien-Lee"); mixed case is the student's own and kept as typed.
+  function tidyName(v) {
+    v = (v || '').replace(/\s+/g, ' ').trim();
+    if (!v || (v !== v.toLowerCase() && v !== v.toUpperCase())) return v;
+    return v.toLowerCase().replace(/(^|[\s\-'’])([a-zà-ÿ])/g, function (m, sep, ch) { return sep + ch.toUpperCase(); });
+  }
+  ['first_name', 'last_name'].forEach(function (id) {
+    $(id).addEventListener('blur', function () { $(id).value = tidyName($(id).value); });
+  });
+
+  // (3) Email: one-tap endings, and a nudge for a misspelled common domain.
+  var EMAIL_DOMAINS = ['gmail.com', 'icloud.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'aol.com'];
+  var KNOWN_OK = EMAIL_DOMAINS.concat(['mail.com', 'gmx.com', 'ymail.com', 'me.com', 'mac.com', 'live.com', 'msn.com',
+    'comcast.net', 'verizon.net', 'optonline.net', 'att.net', 'protonmail.com', 'proton.me']);
+  function editDistance(a, b) {
+    var d = [], i, j;
+    for (i = 0; i <= a.length; i++) { d[i] = [i]; }
+    for (j = 1; j <= b.length; j++) d[0][j] = j;
+    for (i = 1; i <= a.length; i++) for (j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[a.length][b.length];
+  }
+  function suggestDomain(dom) {
+    dom = (dom || '').toLowerCase();
+    if (!dom || KNOWN_OK.indexOf(dom) >= 0) return '';
+    var fixedTld = dom.replace(/\.(con|cmo|cm|co|om|comm|coom|vom|xom)$/, '.com');
+    if (fixedTld !== dom && EMAIL_DOMAINS.indexOf(fixedTld) >= 0) return fixedTld;
+    var best = '', bestD = 3;
+    EMAIL_DOMAINS.forEach(function (k) { var dd = editDistance(dom, k); if (dd < bestD) { bestD = dd; best = k; } });
+    return bestD <= 2 && dom.length >= 5 ? best : '';
+  }
+  function renderEmailHelp(showFix) {
+    var v = $('email').value.trim(), at = v.indexOf('@');
+    var local = at >= 0 ? v.slice(0, at) : v, dom = at >= 0 ? v.slice(at + 1).toLowerCase() : '';
+    var chips = local && !/\s/.test(local) && EMAIL_DOMAINS.indexOf(dom) < 0
+      ? EMAIL_DOMAINS.filter(function (d) { return !dom || d.indexOf(dom) === 0; }) : [];
+    $('emailChips').innerHTML = chips.map(function (d) { return '<button type="button" class="chip" data-dom="' + d + '">@' + d + '</button>'; }).join('');
+    var fix = showFix && at > 0 ? suggestDomain(dom) : '';
+    $('emailFix').hidden = !fix;
+    if (fix) { $('emailFixText').textContent = 'Did you mean ' + local + '@' + fix + '?'; $('emailFixBtn').setAttribute('data-dom', fix); }
+    $('emailHelp').hidden = !chips.length && !fix;
+  }
+  $('email').addEventListener('input', function () { renderEmailHelp(false); });
+  $('email').addEventListener('focus', function () { renderEmailHelp(false); });
+  $('email').addEventListener('blur', function () { setTimeout(function () { renderEmailHelp(true); $('emailChips').innerHTML = ''; $('emailHelp').hidden = $('emailFix').hidden; }, 150); });
+  $('emailHelp').addEventListener('mousedown', function (ev) { if (ev.target.closest('button')) ev.preventDefault(); });
+  $('emailHelp').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-dom]'); if (!b) return;
+    var v = $('email').value.trim(), at = v.indexOf('@');
+    $('email').value = (at >= 0 ? v.slice(0, at) : v) + '@' + b.getAttribute('data-dom');
+    $('email').classList.remove('invalid');
+    $('emailFix').hidden = true; $('emailChips').innerHTML = ''; $('emailHelp').hidden = true;
+    $('email').blur();
+    bumpFormIdle();
+  });
+
+  // (4) ZIP first: city and state fill in from the US ZIP list (GeoNames,
+  // the table Homebase's planner bundles), loaded once and kept offline.
+  var zipIndex = null, zipLoading = null, zipFilled = { city: false, state: false };
+  function loadZips() {
+    if (zipIndex || zipLoading) return zipLoading;
+    zipLoading = fetch('zipcodes.json').then(function (r) { return r.json(); }).then(function (d) {
+      var m = {}, z = 0;
+      d.z.split(',').forEach(function (pair) {
+        var k = pair.indexOf(':');
+        z += parseInt(pair.slice(0, k), 16);
+        m[z] = d.places[parseInt(pair.slice(k + 1), 16)];
+      });
+      zipIndex = m;
+    }).catch(function () { zipLoading = null; });
+    return zipLoading;
+  }
+  function zipLookup() {
+    var v = $('postal').value.trim(), m = /^(\d{5})(?:-?\d{4})?$/.exec(v);
+    if (!m) return;
+    (loadZips() || Promise.resolve()).then(function () {
+      var place = zipIndex && zipIndex[parseInt(m[1], 10)];
+      if (!place) return;
+      var bar = place.lastIndexOf('|');
+      // each field fills only while it's blank or still holds an earlier ZIP's answer
+      if (!$('city').value || zipFilled.city) { $('city').value = place.slice(0, bar); zipFilled.city = true; }
+      if (!$('state').value || zipFilled.state) { $('state').value = place.slice(bar + 1); zipFilled.state = true; }
+    });
+  }
+  $('postal').addEventListener('input', zipLookup);
+  $('postal').addEventListener('focus', loadZips);
+  ['city', 'state'].forEach(function (id) { $(id).addEventListener('input', function () { zipFilled[id] = false; }); });
 
   // School label + program list follow the student type.
   Array.prototype.forEach.call(document.querySelectorAll('input[name=fs_type]'), function (r) {
@@ -606,6 +811,8 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       $('schoolLabel').textContent = r.value === 'First-Year' ? 'High school' : 'Current or most recent college';
       document.querySelector('#signup .seg').classList.remove('invalid');
       refreshMajorPool();
+      prefillSchool();
+      termFromGrad();
     });
   });
   $('campus').addEventListener('change', refreshMajorPool);
@@ -627,13 +834,16 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   // campus name → F (first-year) / T (transfer) / G (graduate + vet).
   // Refreshed from Homebase DEV on 11/11/2026.
   var PROGRAMS = {"Brooklyn":{"F":["Accounting BS","Acting Theater/Film/TV BFA","Applied Music BA","Artificial Intelligence BS","Biochemistry BS","Biology BS","Business Administration BBA","Communcatn Sci Disrders B.S.","Communication BA","Computer Science BS","Culinary Arts BS","Data Analytics BS","Digital Engineering BE","Early College Scholars","Early College Scholars-Roc Nat","Entrepreneurship BS","Exercise Sci & Wellnes BS","Fashion Merchandising & Mgt BS","Film and Television BFA","Finance BS","Global Studies BA","Health Science BS","Hospitality Management BS","Int Relations & Diplomacy BA","Int'l RelationsDiplomacy CRT","Journalism BA","Marketing BS","Media Arts BA","Music Tech  Ent & Prod BFA","Nursing BS","Occupational Therapy BS/MS","Pharmacy Professional PharmD","Political Science BA","Psychology BA","Respiratory Care BS","Smart Scholars Early College","Social Science BA","Social Work BS","Sports Comm & Marketing BA","Sports Management BS","Summer Honors Institute","Theatre Arts BFA","Undeclared Lib Arts&Sci Ugrad","Veterinary Technology BS","Vocal Performance BM"],"T":["Accelerated Nursing BS","Accounting BS","Acting Theater/Film/TV BFA","Applied Music BA","Artificial Intelligence BS","Biochemistry BS","Biology BS","Business Administration BBA","Communcatn Sci Disrders B.S.","Communication BA","Computer Science BS","Culinary Arts BS","Data Analytics BS","Digital Engineering BE","Early College Scholars","Early College Scholars-Roc Nat","Entrepreneurship BS","Exercise Sci & Wellnes BS","Fashion Merchandising & Mgt BS","Film and Television BFA","Finance BS","Global Studies BA","Health Science BS","Hospitality Management BS","Int Relations & Diplomacy BA","Int'l RelationsDiplomacy CRT","Journalism BA","Marketing BS","Media Arts BA","Music Tech  Ent & Prod BFA","Nursing BS","Occupational Therapy BS/MS","Pharmacy Professional PharmD","Political Science BA","Psychology BA","Respiratory Care BS","Smart Scholars Early College","Social Science BA","Social Work BS","Sports Comm & Marketing BA","Sports Management BS","Summer Honors Institute","Theatre Arts BFA","Undeclared Lib Arts&Sci Ugrad","Veterinary Technology BS","Vocal Performance BM"],"G":["Artificial Intelligence MS","Biology MS","Business Administration MBA","Business MBA","Clinical Psychology PhD","Computational Sci & AI PHD","Computer Science MS","Creative Writing & Publsh MFA","Data Anal & Strat Bus Intel MS","Drug Regulatory Affairs MS","Exercise Science MS","Family Nurse Practitioner MS","Family Nurse Practitnr Cert.","Health Administration MPA","Marriage and Family Therapy MS","Marriage and Family Therpy CRT","Mental Health Counseling Cert","Mental Health Counseling MS","Pharmaceutical Sciences PhD","Pharmaceutics MS","Pharmacology/Toxicology MS","Pharmacy Administration MS","Physical Therapy DPT","Physician Assistant MS","Psychology MA","Public Administration MPA","Public Health MPH","School Psychologist MSE","Social Work  DSW","Social Work MSW","Speech-Language Pathology MS","Sports Management MS","United Nations Adv Certificate","Writing and Producing TV MFA"]},"Global":{"F":["Global Studies BA"],"T":["Global Studies BA"]},"Hudson":{"G":["Bilingual Ext Schl Couns CRT","Business Administration MBA","Business of Pharm/Biotech","Childhd Ed & Stu w/Dis All MSE","Childhood Ed and TESOL MSED","Childhood Education MSED","Childhood Special Ed MSED","Chldhd Ed & Lit (all gr) MSE","Crisis Management","Early Childhd Educatn ADV CRT","Early Childhd/Spec Ed MSED","Early Chld/Lit All Grades MSED","Educational Leadership ADV CRT","Educational Leadership MSED","Healthcare Sector Mgtmnt CRT","Marr/Fam Ther w/ Diag Priv MS","Mental Health Cnslng ADV CERT","Mental Health Counseling MS","Mid Chldhd Mth&Adol Mth MSED","Mid Chldhd SST & Adol SST MSE","Non-Degree Studies","Pharmaceutics MS","School Counselor MSED","School Psychologist MSED","Spec Ed: Gr 5-12 ENG MSED","Stud w/Dis (All grades)ADV CRT","Studnts with Dis PreK-12  MSED","SWD PreK -12 and Literacy All","Tching Lit All Grades  ADV CRT","Teaching Literacy 5-12 ADV CRT","Tesol (All Grades) ADV CRT","Tesol (All Grades) MSED"]},"Post":{"F":["Accountancy BS","Accounting BS","Adol Ed: Biology BS","Adol English Ed/SWD(All Gr) BS","Adol Math Ed/SWD (All Grades)","Adol Soc Stud Ed/SWD (all)","Adol. Educ: Mathematics  B.S.","Artificial Intelligence BS","Arts Management BFA","Biology BS","Biomed Sci:Clin Lab Sci-G BS","Broadcasting BFA","Business Administration BBA","Business Administration BS","Chemistry B.A.","Childhood Ed/SWD BS","Childhood/Early Childhood BS","Communications BS","Computer Science BS","Criminal Justice BA","Culinary Arts BS","Data Analytics BS","Digital Arts and Design BFA","Digital Engineering BE","Digital Game Design/Dev BFA","Early Childhood/SWD BS","Entrepreneurship BS","Exercise Sci & Wellnes BS","Fashion Merchandising & Mgt BS","Film and Television BFA","Film BFA","Finance BS","Forensic Science BS","Global Studies BA","Health Sciences BS","Hlth Ed & Phys Ed BS","Int Relations & Diplomacy BA","Journalism BFA","Marketing BS","Mathematics BS","Music Education B-12 BM","Music Tech  Ent & Prod BFA","Nursing BS","Nutrition and Dietetics BS","Pharmacy Professional PharmD","Political Science BA","Post Visiting Undergraduate","Psychology BA","Radiologic Technology BS","Social Work BS","Speech Lang Path and Audio BS","Sports Management BS","Theatre Arts BFA","Undeclared","Undeclared Major","Undeclared: Pre-Law","Veterinary Technology BS"],"T":["Accountancy BS","Accounting BS","Adol Ed: Biology BS","Adol English Ed/SWD(All Gr) BS","Adol Math Ed/SWD (All Grades)","Adol Soc Stud Ed/SWD (all)","Adol. Educ: Mathematics  B.S.","Artificial Intelligence BS","Arts Management BFA","Biology BS","Biomed Sci:Clin Lab Sci-G BS","Broadcasting BFA","Business Administration BBA","Business Administration BS","Chemistry B.A.","Childhood Ed/SWD BS","Childhood/Early Childhood BS","Communications BS","Computer Science BS","Criminal Justice BA","Culinary Arts BS","Data Analytics BS","Digital Arts and Design BFA","Digital Engineering BE","Digital Game Design/Dev BFA","Early Childhood/SWD BS","Entrepreneurship BS","Exercise Sci & Wellnes BS","Fashion Merchandising & Mgt BS","Film and Television BFA","Film BFA","Finance BS","Forensic Science BS","Global Studies BA","Health Sciences BS","Hlth Ed & Phys Ed BS","Int Relations & Diplomacy BA","Journalism BFA","Marketing BS","Mathematics BS","Music Education B-12 BM","Music Tech  Ent & Prod BFA","Nursing BS","Nutrition and Dietetics BS","Pharmacy Professional PharmD","Political Science BA","Post Visiting Undergraduate","Psychology BA","Radiologic Technology BS","Social Work BS","Speech Lang Path and Audio BS","Sports Management BS","Theatre Arts BFA","Undeclared","Undeclared Major","Undeclared: Pre-Law","Veterinary Technology BS"],"G":["Accountancy MS","Adolescence Education 7-12 MS","Archives & Records Mgt. Certif","Artificial Intelligence MS","Behavior Analysis MA","Biology MS","Biomedical Sciences MS","Business Administration MBA","Childhood Ed/SWD AllGrades MS","Clinical Art Ther & Couns MA","Clinical Lab Sciences MS","Clinical Ment Hlth Coun ADVCRT","Clinical Mental Hlth Couns MS","Comp Sci/Dig Fluency ADV CRT","Criminal Justice MS","Data Anal & Strat Bus Intel MS","Early Childhood/Childhood MS","Educational Leadership ADV CRT","Educational Leadership MSED","Family Nurse Practitioner MS","Genetic Counseling MS","Health Administration MHA","Information Studies PhD","Lib Info Sci/Schl Lib Media MS","Library and Info Science MS","Library Sci Non-Degree Studies","Literacy (All Grades) MSED","Management Engineering M.S.","Museum Studies M.A.","Physical Therapy DPT","Psychology - Clinical-PsyD","Public Library Admin ADV CRT","Reg Dietitian Nutritionist MS","School Counseling MS","School Dist Busn Ldr ADV CRT","School Dist Busn Ldr MSED","Social Work MSW","Special Education MSED","Speech-Language Pathology MA","Sports Management MS","Stdnt w/ Disabilites (All)MSED","Transformational Leadershp EdD"]},"Riverhead":{"F":["Childhood Education BS","Communication Stud - New Media","Riverhead Visiting (UG)"],"T":["Childhood Education BS","Communication Stud - New Media","Riverhead Visiting (UG)"],"G":["Childhood Education MS","Non-Degree Studies","Teach Students w/Disabil MS"]},"College of Veterinary Medicine":{"G":["Comp Biomed & Vet Sciences MS","Comp Biomedical Vet Sci PHD","Veterinary Medicine DVM"]}};
+  // PeopleSoft plan codes for Plan1Nm, by campus then by program alone — the
+  // same resolution as Homebase's _acad_plan_descr_map (DEV, 11/11/2026).
+  var PLAN_CODES = {"byCampus":{"Brooklyn":{"Accounting BS":"BACCTBS","Acting Theater/Film/TV BFA":"BACTTFTBFA","Applied Music BA":"BMUSICBA","Artificial Intelligence BS":"BAIBS","Biochemistry BS":"BBIOCHEMBS","Biology BS":"BBIOLOGYBS","Business Administration BBA":"BBUSBBA","Communcatn Sci Disrders B.S.":"BCOMSCIBS","Communication BA":"BCOMMBA","Computer Science BS":"BCSCIBS","Culinary Arts BS":"BCABS","Data Analytics BS":"BDATANALBS","Digital Engineering BE":"BDIGENGBE","Early College Scholars":"BECS2","Early College Scholars-Roc Nat":"BECSROC","Entrepreneurship BS":"BENTREPBS","Exercise Sci & Wellnes BS":"BSPRTSCIBS","Fashion Merchandising & Mgt BS":"BFMBS","Film and Television BFA":"BFILMTVBFA","Finance BS":"BBUSFINBS","Global Studies BA":"BGLBLSTUBA","Health Science BS":"BHLTHSCIBS","Hospitality Management BS":"BHMBS","Int Relations & Diplomacy BA":"BINTRELBA","Int'l RelationsDiplomacy CRT":"BIRDCRT","Journalism BA":"BJOURNALBA","Marketing BS":"BMKTNGBS","Media Arts BA":"BMEDARTSBA","Music Tech  Ent & Prod BFA":"BMTEPBFA","Nursing BS":"BNURSINGBS","Occupational Therapy BS/MS":"BOCTHRBSMS","Pharmacy Professional PharmD":"BPHARMD","Political Science BA":"BPOLISCIBA","Psychology BA":"BPSYCHBA","Respiratory Care BS":"BRESPCRBS","Smart Scholars Early College":"BSMRTSCHOL","Social Science BA":"BSOCSCIBA","Social Work BS":"BSOCWRKBS","Sports Comm & Marketing BA":"BSCMBA","Sports Management BS":"BSPRTMGTBS","Summer Honors Institute":"BSUMHONINT","Theatre Arts BFA":"CTABFA","Undeclared Lib Arts&Sci Ugrad":"BUNDCLRLAS","Veterinary Technology BS":"CVETTECHBS","Vocal Performance BM":"BVPBM","Accelerated Nursing BS":"BNURACCLBS","Artificial Intelligence MS":"BAIMS","Biology MS":"BBIOLOGYMS","Business Administration MBA":"BBUSADMBA","Business MBA":"BBUSMBA","Clinical Psychology PhD":"BPSYCHPHD","Computational Sci & AI PHD":"BCSAIPHD","Computer Science MS":"BCSCIMS","Creative Writing & Publsh MFA":"BENCRWRMFA","Data Anal & Strat Bus Intel MS":"BDASBIMS","Drug Regulatory Affairs MS":"BDRGREGMS","Exercise Science MS":"BHLTHSCIMS","Family Nurse Practitioner MS":"BFAMNRSMS","Family Nurse Practitnr Cert.":"BFAMNURCRT","Health Administration MPA":"BHLTADMPA","Marriage and Family Therapy MS":"BMRGFMTHMS","Marriage and Family Therpy CRT":"BMGFMTHCRT","Mental Health Counseling Cert":"BMNTLHTHCR","Mental Health Counseling MS":"BMNTLHTHMS","Pharmaceutical Sciences PhD":"BPHRMCEPHD","Pharmaceutics MS":"BPHRMCEUMS","Pharmacology/Toxicology MS":"BPHRTOXMS","Pharmacy Administration MS":"BPHARADMMS","Physical Therapy DPT":"BPHTHDPT","Physician Assistant MS":"BPHYSASTMS","Psychology MA":"BPSYCHMA","Public Administration MPA":"BPUBADMPA","Public Health MPH":"BPUBHLTMPH","School Psychologist MSE":"BSCHPSYMSE","Social Work  DSW":"BSOCWRKDSW","Social Work MSW":"BSOCWRKMSW","Speech-Language Pathology MS":"BSPLGPTHMS","Sports Management MS":"BSPRTMGTMS","United Nations Adv Certificate":"BUNTDNTCRT","Writing and Producing TV MFA":"BWRTPRODTV"},"Global":{"Global Studies BA":"BGLBLSTUBA"},"Hudson":{"Bilingual Ext Schl Couns CRT":"WRBLESCCRT","Business Administration MBA":"WBUSADMBA","Business of Pharm/Biotech":"WBPBADVCRT","Childhd Ed & Stu w/Dis All MSE":"WCESWDMSED","Childhood Ed and TESOL MSED":"WCETMSED","Childhood Education MSED":"WCEMSED","Childhood Special Ed MSED":"WCSEMSED","Chldhd Ed & Lit (all gr) MSE":"WCELMSED","Crisis Management":"WCRIMGTAC","Early Childhd Educatn ADV CRT":"WECECRT","Early Childhd/Spec Ed MSED":"WECSEMSED","Early Chld/Lit All Grades MSED":"WECLMSED","Educational Leadership ADV CRT":"WSDLCRT","Educational Leadership MSED":"WSBLMSED","Healthcare Sector Mgtmnt CRT":"WHCSCMGCRT","Marr/Fam Ther w/ Diag Priv MS":"WMRGFAMTHR","Mental Health Cnslng ADV CERT":"WMTLHLTCRT","Mental Health Counseling MS":"WMNTHTHCNS","Mid Chldhd Mth&Adol Mth MSED":"WCAMMSED","Mid Chldhd SST & Adol SST MSE":"WMCSSMSED","Non-Degree Studies":"WUNDCLRTED","Pharmaceutics MS":"WPHRMMS","School Counselor MSED":"WSC2MSED","School Psychologist MSED":"WSPMSED","Spec Ed: Gr 5-12 ENG MSED":"WSPEDENMSE","Stud w/Dis (All grades)ADV CRT":"WSWDADVCRT","Studnts with Dis PreK-12  MSED":"WSEGMSED","SWD PreK -12 and Literacy All":"WSWDLITMSE","Tching Lit All Grades  ADV CRT":"WTLB6CRT","Teaching Literacy 5-12 ADV CRT":"WTL512CRT","Tesol (All Grades) ADV CRT":"WTESOLCRT","Tesol (All Grades) MSED":"WTESOLMSED"},"Post":{"Accountancy BS":"CACCBS","Accounting BS":"BACCTBS","Adol Ed: Biology BS":"CAEBIOBS","Adol English Ed/SWD(All Gr) BS":"CAESWDBS","Adol Math Ed/SWD (All Grades)":"CAM2SWDBS","Adol Soc Stud Ed/SWD (all)":"CASESWDBS","Adol. Educ: Mathematics  B.S.":"CAEMBS","Artificial Intelligence BS":"CAIBS","Arts Management BFA":"CARMBFA","Biology BS":"CBBS","Biomed Sci:Clin Lab Sci-G BS":"CMETBS","Broadcasting BFA":"CEMBFA","Business Administration BBA":"BBUSBBA","Business Administration BS":"CBABS","Chemistry B.A.":"CCBA","Childhood Ed/SWD BS":"CCESWDBS","Childhood/Early Childhood BS":"CCEECEBS","Communications BS":"CCOMMBS","Computer Science BS":"CCSBS","Criminal Justice BA":"CCJBA","Culinary Arts BS":"BCABS","Data Analytics BS":"CDATANALBS","Digital Arts and Design BFA":"CDADBFA","Digital Engineering BE":"CDIGENGBE","Digital Game Design/Dev BFA":"CDGDDBFA","Early Childhood/SWD BS":"CECESWDDBS","Entrepreneurship BS":"CENTBS","Exercise Sci & Wellnes BS":"BSPRTSCIBS","Fashion Merchandising & Mgt BS":"CFMBS","Film and Television BFA":"BFILMTVBFA","Film BFA":"CFBFA","Finance BS":"CFINANCEBS","Forensic Science BS":"CFSBS","Global Studies BA":"BGLBLSTUBA","Health Sciences BS":"CHSBS","Hlth Ed & Phys Ed BS":"CHEPEBS","Int Relations & Diplomacy BA":"CINTNASTBA","Journalism BFA":"CPRELECBFA","Marketing BS":"CMKTGBS","Mathematics BS":"CMATHBS","Music Education B-12 BM":"CMEDBM","Music Tech  Ent & Prod BFA":"CMTEPBFA","Nursing BS":"CNRSBS","Nutrition and Dietetics BS":"CNUTBS","Pharmacy Professional PharmD":"BPHARMD","Political Science BA":"CPOLSCIBA","Post Visiting Undergraduate":"CVISNDO","Psychology BA":"CPSYBA","Radiologic Technology BS":"CRTBS","Social Work BS":"CSWBS","Speech Lang Path and Audio BS":"CSHEBS","Sports Management BS":"CSPTMGTBS","Theatre Arts BFA":"CTABFA","Undeclared":"CSCAU","Undeclared Major":"CUNDLASU","Undeclared: Pre-Law":"CPRELAW","Veterinary Technology BS":"CVETTECHBS","Accountancy MS":"CACCMS","Adolescence Education 7-12 MS":"CADE712GMS","Archives & Records Mgt. Certif":"CARMCRT","Artificial Intelligence MS":"CAIMS","Behavior Analysis MA":"CBAMA","Biology MS":"CBIOMS","Biomedical Sciences MS":"CMBMS","Business Administration MBA":"CBUSAMBA","Childhood Ed/SWD AllGrades MS":"CCESE2MS","Clinical Art Ther & Couns MA":"CATCMA","Clinical Lab Sciences MS":"CCLSMS","Clinical Ment Hlth Coun ADVCRT":"CMHCADVCRT","Clinical Mental Hlth Couns MS":"CMHCMS","Comp Sci/Dig Fluency ADV CRT":"CCDFADVCRT","Criminal Justice MS":"CCJMS","Data Anal & Strat Bus Intel MS":"CDASBIMS","Early Childhood/Childhood MS":"CECCHIMS","Educational Leadership ADV CRT":"CEDLCRT","Educational Leadership MSED":"CSBLMSED","Family Nurse Practitioner MS":"CAPNFNMS","Genetic Counseling MS":"CGCMS","Health Administration MHA":"CHAMHA","Information Studies PhD":"CISPHD","Lib Info Sci/Schl Lib Media MS":"CLISSLMMS","Library and Info Science MS":"CLISNYUMS","Library Sci Non-Degree Studies":"CUNDLISG","Literacy (All Grades) MSED":"CLITMSED","Management Engineering M.S.":"CMEMS","Museum Studies M.A.":"CMUSEUMMA","Physical Therapy DPT":"CPHTHDPT","Psychology - Clinical-PsyD":"CPSYCLPSD","Public Library Admin ADV CRT":"CLACRT","Reg Dietitian Nutritionist MS":"CRDNMS","School Counseling MS":"CSC2MS","School Dist Busn Ldr ADV CRT":"CSDBLCRT","School Dist Busn Ldr MSED":"CSDBLMSED","Social Work MSW":"CSWMSW","Special Education MSED":"CSEMSED","Speech-Language Pathology MA":"CTSSLDMA","Sports Management MS":"CSPRTMGTMS","Stdnt w/ Disabilites (All)MSED":"CSWDAGMSED","Transformational Leadershp EdD":"CIESGEDD"},"Riverhead":{"Childhood Education BS":"HCHEUBS","Communication Stud - New Media":"HCOMMSTUBA","Riverhead Visiting (UG)":"HVISUGNDO","Childhood Education MS":"HCHEGMS","Non-Degree Studies":"HUNDEDUNDO","Teach Students w/Disabil MS":"HTSDGMS"},"College of Veterinary Medicine":{"Comp Biomed & Vet Sciences MS":"VCBVSMS","Comp Biomedical Vet Sci PHD":"VCBVETPHD","Veterinary Medicine DVM":"VETMEDDVM"}},"any":{"Accelerated Nursing BS":"BNURACCLBS","Accountancy BS":"CACCBS","Accountancy MS":"CACCMS","Accounting BS":"BACCTBS","Acting Theater/Film/TV BFA":"BACTTFTBFA","Adol Ed: Biology BS":"CAEBIOBS","Adol English Ed/SWD(All Gr) BS":"CAESWDBS","Adol Math Ed/SWD (All Grades)":"CAM2SWDBS","Adol Soc Stud Ed/SWD (all)":"CASESWDBS","Adol. Educ: Mathematics  B.S.":"CAEMBS","Adolescence Education 7-12 MS":"CADE712GMS","Applied Music BA":"BMUSICBA","Archives & Records Mgt. Certif":"CARMCRT","Artificial Intelligence BS":"BAIBS","Artificial Intelligence MS":"BAIMS","Arts Management BFA":"CARMBFA","Behavior Analysis MA":"CBAMA","Bilingual Ext Schl Couns CRT":"WRBLESCCRT","Biochemistry BS":"BBIOCHEMBS","Biology BS":"BBIOLOGYBS","Biology MS":"BBIOLOGYMS","Biomed Sci:Clin Lab Sci-G BS":"CMETBS","Biomedical Sciences MS":"CMBMS","Broadcasting BFA":"CEMBFA","Business Administration BBA":"BBUSBBA","Business Administration BS":"CBABS","Business Administration MBA":"CBUSAMBA","Business MBA":"BBUSMBA","Business of Pharm/Biotech":"WBPBADVCRT","Chemistry B.A.":"CCBA","Childhd Ed & Stu w/Dis All MSE":"WCESWDMSED","Childhood Ed and TESOL MSED":"WCETMSED","Childhood Ed/SWD AllGrades MS":"CCESE2MS","Childhood Ed/SWD BS":"CCESWDBS","Childhood Education BS":"HCHEUBS","Childhood Education MS":"HCHEGMS","Childhood Education MSED":"WCEMSED","Childhood Special Ed MSED":"WCSEMSED","Childhood/Early Childhood BS":"CCEECEBS","Chldhd Ed & Lit (all gr) MSE":"WCELMSED","Clinical Art Ther & Couns MA":"CATCMA","Clinical Lab Sciences MS":"CCLSMS","Clinical Ment Hlth Coun ADVCRT":"CMHCADVCRT","Clinical Mental Hlth Couns MS":"CMHCMS","Clinical Psychology PhD":"BPSYCHPHD","Communcatn Sci Disrders B.S.":"BCOMSCIBS","Communication BA":"BCOMMBA","Communication Stud - New Media":"HCOMMSTUBA","Communications BS":"CCOMMBS","Comp Biomed & Vet Sciences MS":"VCBVSMS","Comp Biomedical Vet Sci PHD":"VCBVETPHD","Comp Sci/Dig Fluency ADV CRT":"CCDFADVCRT","Computational Sci & AI PHD":"BCSAIPHD","Computer Science BS":"BCSCIBS","Computer Science MS":"BCSCIMS","Creative Writing & Publsh MFA":"BENCRWRMFA","Criminal Justice BA":"CCJBA","Criminal Justice MS":"CCJMS","Crisis Management":"WCRIMGTAC","Culinary Arts BS":"BCABS","Data Anal & Strat Bus Intel MS":"BDASBIMS","Data Analytics BS":"BDATANALBS","Digital Arts and Design BFA":"CDADBFA","Digital Engineering BE":"BDIGENGBE","Digital Game Design/Dev BFA":"CDGDDBFA","Drug Regulatory Affairs MS":"BDRGREGMS","Early Childhd Educatn ADV CRT":"WECECRT","Early Childhd/Spec Ed MSED":"WECSEMSED","Early Childhood/Childhood MS":"CECCHIMS","Early Childhood/SWD BS":"CECESWDDBS","Early Chld/Lit All Grades MSED":"WECLMSED","Early College Scholars":"BECS2","Early College Scholars-Roc Nat":"BECSROC","Educational Leadership ADV CRT":"CEDLCRT","Educational Leadership MSED":"WSBLMSED","Entrepreneurship BS":"BENTREPBS","Exercise Sci & Wellnes BS":"BSPRTSCIBS","Exercise Science MS":"BHLTHSCIMS","Family Nurse Practitioner MS":"BFAMNRSMS","Family Nurse Practitnr Cert.":"BFAMNURCRT","Fashion Merchandising & Mgt BS":"BFMBS","Film BFA":"CFBFA","Film and Television BFA":"BFILMTVBFA","Finance BS":"CFINANCEBS","Forensic Science BS":"CFSBS","Genetic Counseling MS":"CGCMS","Global Studies BA":"BGLBLSTUBA","Health Administration MHA":"CHAMHA","Health Administration MPA":"BHLTADMPA","Health Science BS":"BHLTHSCIBS","Health Sciences BS":"CHSBS","Healthcare Sector Mgtmnt CRT":"WHCSCMGCRT","Hlth Ed & Phys Ed BS":"CHEPEBS","Hospitality Management BS":"BHMBS","Information Studies PhD":"CISPHD","Int Relations & Diplomacy BA":"BINTRELBA","Int'l RelationsDiplomacy CRT":"BIRDCRT","Journalism BA":"BJOURNALBA","Journalism BFA":"CPRELECBFA","Lib Info Sci/Schl Lib Media MS":"CLISSLMMS","Library Sci Non-Degree Studies":"CUNDLISG","Library and Info Science MS":"CLISNYUMS","Literacy (All Grades) MSED":"CLITMSED","Management Engineering M.S.":"CMEMS","Marketing BS":"BMKTNGBS","Marr/Fam Ther w/ Diag Priv MS":"WMRGFAMTHR","Marriage and Family Therapy MS":"BMRGFMTHMS","Marriage and Family Therpy CRT":"BMGFMTHCRT","Mathematics BS":"CMATHBS","Media Arts BA":"BMEDARTSBA","Mental Health Cnslng ADV CERT":"WMTLHLTCRT","Mental Health Counseling Cert":"BMNTLHTHCR","Mental Health Counseling MS":"BMNTLHTHMS","Mid Chldhd Mth&Adol Mth MSED":"WCAMMSED","Mid Chldhd SST & Adol SST MSE":"WMCSSMSED","Museum Studies M.A.":"CMUSEUMMA","Music Education B-12 BM":"CMEDBM","Music Tech  Ent & Prod BFA":"BMTEPBFA","Non-Degree Studies":"HUNDEDUNDO","Nursing BS":"BNURSINGBS","Nutrition and Dietetics BS":"CNUTBS","Occupational Therapy BS/MS":"BOCTHRBSMS","Pharmaceutical Sciences PhD":"BPHRMCEPHD","Pharmaceutics MS":"BPHRMCEUMS","Pharmacology/Toxicology MS":"BPHRTOXMS","Pharmacy Administration MS":"BPHARADMMS","Pharmacy Professional PharmD":"BPHARMD","Physical Therapy DPT":"BPHTHDPT","Physician Assistant MS":"BPHYSASTMS","Political Science BA":"BPOLISCIBA","Post Visiting Undergraduate":"CVISNDO","Psychology - Clinical-PsyD":"CPSYCLPSD","Psychology BA":"BPSYCHBA","Psychology MA":"BPSYCHMA","Public Administration MPA":"BPUBADMPA","Public Health MPH":"BPUBHLTMPH","Public Library Admin ADV CRT":"CLACRT","Radiologic Technology BS":"CRTBS","Reg Dietitian Nutritionist MS":"CRDNMS","Respiratory Care BS":"BRESPCRBS","Riverhead Visiting (UG)":"HVISUGNDO","SWD PreK -12 and Literacy All":"WSWDLITMSE","School Counseling MS":"CSC2MS","School Counselor MSED":"WSC2MSED","School Dist Busn Ldr ADV CRT":"CSDBLCRT","School Dist Busn Ldr MSED":"CSDBLMSED","School Psychologist MSE":"BSCHPSYMSE","School Psychologist MSED":"WSPMSED","Smart Scholars Early College":"BSMRTSCHOL","Social Science BA":"BSOCSCIBA","Social Work  DSW":"BSOCWRKDSW","Social Work BS":"BSOCWRKBS","Social Work MSW":"BSOCWRKMSW","Spec Ed: Gr 5-12 ENG MSED":"WSPEDENMSE","Special Education MSED":"CSEMSED","Speech Lang Path and Audio BS":"CSHEBS","Speech-Language Pathology MA":"CTSSLDMA","Speech-Language Pathology MS":"BSPLGPTHMS","Sports Comm & Marketing BA":"BSCMBA","Sports Management BS":"BSPRTMGTBS","Sports Management MS":"BSPRTMGTMS","Stdnt w/ Disabilites (All)MSED":"CSWDAGMSED","Stud w/Dis (All grades)ADV CRT":"WSWDADVCRT","Studnts with Dis PreK-12  MSED":"WSEGMSED","Summer Honors Institute":"BSUMHONINT","Tching Lit All Grades  ADV CRT":"WTLB6CRT","Teach Students w/Disabil MS":"HTSDGMS","Teaching Literacy 5-12 ADV CRT":"WTL512CRT","Tesol (All Grades) ADV CRT":"WTESOLCRT","Tesol (All Grades) MSED":"WTESOLMSED","Theatre Arts BFA":"CTABFA","Transformational Leadershp EdD":"CIESGEDD","Undeclared":"CSCAU","Undeclared Lib Arts&Sci Ugrad":"BUNDCLRLAS","Undeclared Major":"CUNDLASU","Undeclared: Pre-Law":"CPRELAW","United Nations Adv Certificate":"BUNTDNTCRT","Veterinary Medicine DVM":"VETMEDDVM","Veterinary Technology BS":"CVETTECHBS","Vocal Performance BM":"BVPBM","Writing and Producing TV MFA":"BWRTPRODTV"}};
   var UNDECIDED = 'Undecided';
   var majorPool = [];
   function normText(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim(); }
   function refreshMajorPool() {
     var typeEl = document.querySelector('input[name=fs_type]:checked');
     var fams = typeEl ? [{ 'First-Year': 'F', 'Transfer': 'T', 'Graduate': 'G' }[typeEl.value]] : ['F', 'T', 'G'];
-    var campus = settings.campus || $('campus').value;
+    var ce = curEvent(), campus = (ce && ce.campus) || $('campus').value;
     function collect(campuses) {
       var seen = {}, out = [];
       campuses.forEach(function (c) {
@@ -802,10 +1012,11 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     var entry = {
       id: uid(),
       created: new Date().toISOString(),
-      event: eventName(),
+      eventId: (curEvent() || {}).id || '',
+      event: (curEvent() || {}).name || '',
       exported: null,
-      first_name: val('first_name'),
-      last_name: val('last_name'),
+      first_name: tidyName(val('first_name')),
+      last_name: tidyName(val('last_name')),
       email: val('email').toLowerCase(),
       phone: val('phone'),
       admit_type: typeEl ? (intl ? INTL_TYPE[typeEl.value] : typeEl.value) : '',
@@ -814,7 +1025,7 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       high_school: val('high_school'),
       grad_year: $('grad_year').value,
       admit_term: $('admit_term').value,
-      campus: settings.campus || $('campus').value,
+      campus: (curEvent() || {}).campus || $('campus').value,
       intended_major: val('intended_major'),
       address: settings.askAddress ? val('address') : '',
       city: settings.askAddress ? val('city') : '',
@@ -822,9 +1033,20 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
       postal: settings.askAddress ? val('postal') : '',
       comment: val('comment')
     };
-    putEntry(entry).then(function () {
-      showThanks(entry.first_name);
-    }).catch(function () {
+    allEntries().then(function (list) {
+      var dup = null;
+      (list || []).forEach(function (e) { if (!dup && e.eventId === entry.eventId && (e.email || '').toLowerCase() === entry.email) dup = e; });
+      if (!dup) return putEntry(entry).then(function () { showThanks(entry.first_name, false); });
+      // already signed up here: keep their one row, take anything new they gave
+      var merged = Object.assign({}, dup), changed = false;
+      Object.keys(entry).forEach(function (k) {
+        if (k === 'id' || k === 'created' || k === 'exported' || k === 'eventId' || k === 'event') return;
+        var nv = entry[k];
+        if (nv !== '' && nv !== false && nv !== null && nv !== undefined && nv !== merged[k]) { merged[k] = nv; changed = true; }
+      });
+      if (changed) merged.exported = null;          // new details → export it again
+      return putEntry(merged).then(function () { showThanks(entry.first_name, true); });
+    }).then(checkUnexported).catch(function () {
       $('formErr').textContent = 'Something went wrong saving that — please ask a staff member.';
     });
   });
@@ -837,13 +1059,19 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     $('countryWrap').hidden = true;
     $('majorClear').hidden = true;
     closeMajors();
+    termAuto = false; zipFilled = { city: false, state: false };
+    $('t_fre').removeAttribute('data-preset');
+    $('emailHelp').hidden = true; $('emailFix').hidden = true;
     refreshMajorPool();
+    presetType();
+    prefillSchool();
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     window.scrollTo(0, 0);
   }
-  function showThanks(first) {
+  function showThanks(first, again) {
     clearForm();
-    $('thanksName').textContent = 'Thank you, ' + first + '!';
+    $('thanksName').textContent = again ? 'You\u2019re already signed up, ' + first + '!' : 'Thank you, ' + first + '!';
+    $('thanksSub').textContent = again ? 'We\u2019ve updated your details.' : 'We\u2019ll be in touch soon.';
     $('thanks').hidden = false;
     setTimeout(function () { $('thanks').hidden = true; }, THANKS_MS);
   }
@@ -853,6 +1081,8 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   var formIdle;
   function formDirty() {
     return Array.prototype.some.call($('signup').elements, function (el) {
+      if (el.id === 'high_school' && el.value === eventSchool()) return false;   // the event's own prefill isn't a student's typing
+      if (el.getAttribute('data-preset') === '1') return false;                // nor is the preselected student type
       return (el.type === 'radio' ? el.checked : (el.tagName !== 'BUTTON' && el.tagName !== 'SELECT' && el.value));
     });
   }
@@ -922,7 +1152,7 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   var staffIdle;
   function bumpStaffIdle() {
     clearTimeout(staffIdle);
-    staffIdle = setTimeout(showForm, STAFF_IDLE_MS);
+    staffIdle = setTimeout(function () { showForm(true); }, STAFF_IDLE_MS);
   }
   ['touchstart', 'click', 'keydown', 'input'].forEach(function (t) {
     $('staffView').addEventListener(t, bumpStaffIdle, { passive: true });
@@ -932,58 +1162,145 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     clearForm();
     $('formView').hidden = true;
     $('staffView').hidden = false;
-    $('setEvent').value = settings.event || '';
     $('setHeading').value = settings.heading || '';
     $('setSub').value = settings.sub || '';
-    $('setCampus').value = settings.campus || '';
     $('setAddr').checked = !!settings.askAddress;
     window.scrollTo(0, 0);
     bumpStaffIdle();
+    renderCurrent();
+    if (!curEvent()) openEventForm(null);
     renderGroups();
   }
-  function showForm() {
+  function showForm(force) {
+    if (!curEvent() && force !== true) {   // every sign-up belongs to an event
+      if (!$('staffView').hidden) { openEventForm(null); $('evErr').textContent = 'Start an event first.'; return; }
+    }
     clearTimeout(staffIdle);
     $('staffView').hidden = true;
     $('formView').hidden = false;
     buildOptions();
     applySettings();
+    checkUnexported();
     window.scrollTo(0, 0);
   }
-  $('backToForm').addEventListener('click', showForm);
+  $('backToForm').addEventListener('click', function () { showForm(false); });
 
   function bindSetting(id, key, prop) {
     $(id).addEventListener(prop === 'checked' ? 'change' : 'input', function () {
       settings[key] = prop === 'checked' ? $(id).checked : $(id).value;
       saveSettings();
-      if (key === 'event') renderGroups();
     });
   }
-  bindSetting('setEvent', 'event');
   bindSetting('setHeading', 'heading');
   bindSetting('setSub', 'sub');
-  bindSetting('setCampus', 'campus');
   bindSetting('setAddr', 'askAddress', 'checked');
 
-  function groupsOf(entries) {
-    var map = {}, order = [];
-    entries.sort(function (a, b) { return a.created < b.created ? 1 : -1; });
-    entries.forEach(function (e) {
-      if (!map[e.event]) { map[e.event] = []; order.push(e.event); }
-      map[e.event].push(e);
+  function eventMeta(ev) {
+    var bits = [ev.type || '', isoToUs(ev.date), ev.counselor || '', ev.school || '', ev.campus || ''].filter(Boolean);
+    return bits.map(esc).join('<span class="sep">·</span>');
+  }
+  function renderCurrent() {
+    var ce = curEvent();
+    $('curNone').hidden = !!ce || !$('evForm').hidden;
+    $('curShow').hidden = !ce || !$('evForm').hidden;
+    if (ce) { $('curName').textContent = ce.name; $('curMeta').innerHTML = eventMeta(ce); }
+  }
+  var editingId = null;              // null = a new event
+  function openEventForm(ev) {
+    editingId = ev ? ev.id : null;
+    $('evName').value = ev ? ev.name : '';
+    $('evType').value = ev ? (ev.type || 'College Fair') : 'College Fair';
+    $('evDate').value = ev ? (ev.date || todayIso()) : todayIso();
+    var last = curEvent();
+    $('evCounselor').value = ev ? (ev.counselor || '') : (last ? last.counselor || '' : '');
+    $('evCampus').value = ev ? (ev.campus || '') : '';
+    $('evSchool').value = ev ? (ev.school || '') : '';
+    $('counselorList').innerHTML = counselorsUsed().map(function (c) { return '<option value="' + esc(c) + '">'; }).join('');
+    $('evSave').textContent = ev ? 'Save changes' : 'Start event';
+    $('evCancel').hidden = !curEvent();
+    $('evErr').textContent = '';
+    $('evForm').hidden = false;
+    renderCurrent();
+    setTimeout(function () { $('evName').focus(); }, 50);
+  }
+  function closeEventForm() { $('evForm').hidden = true; renderCurrent(); }
+  $('startEvent').addEventListener('click', function () { openEventForm(null); });
+  $('newEvent').addEventListener('click', function () { openEventForm(null); });
+  $('editEvent').addEventListener('click', function () { openEventForm(curEvent()); });
+  $('evCancel').addEventListener('click', closeEventForm);
+  $('evForm').addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') { ev.preventDefault(); ev.target.blur(); }
+  });
+  $('evForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var name = $('evName').value.trim(), counselor = $('evCounselor').value.trim();
+    if (!name || !counselor) {
+      $('evErr').textContent = !name ? 'Give the event a name.' : 'Enter the counselor at this event.';
+      (!name ? $('evName') : $('evCounselor')).focus();
+      return;
+    }
+    var data = { name: name, type: $('evType').value, date: $('evDate').value || todayIso(), counselor: counselor, campus: $('evCampus').value, school: $('evSchool').value.trim() };
+    var ev0 = editingId ? eventById(editingId) : null;
+    if (ev0) {
+      for (var k in data) ev0[k] = data[k];
+      // the sign-ups carry the event's name for their list headings
+      allEntries().then(function (list) {
+        var upd = list.filter(function (e) { return e.eventId === ev0.id && e.event !== name; })
+          .map(function (e) { var c = Object.assign({}, e); c.event = name; return c; });
+        return upd.length ? putEntries(upd) : null;
+      }).then(renderGroups);
+      toast('Event updated');
+    } else {
+      data.id = uid(); data.created = new Date().toISOString();
+      events.push(data);
+      toast('Started ' + name);
+    }
+    saveEvents();
+    settings.currentEvent = ev0 ? ev0.id : data.id;
+    saveSettings();
+    closeEventForm();
+    renderGroups();
+  });
+
+  // Sign-ups saved before events existed (or under an event since removed)
+  // are grouped by the event name they carry.
+  function migrateEntries(list) {
+    var changed = [], byName = {};
+    events.forEach(function (e) { byName[(e.name || '').toLowerCase()] = e; });
+    list.forEach(function (e) {
+      if (e.eventId && eventById(e.eventId)) return;
+      var nm = (e.event || '').trim() || 'Earlier sign-ups';
+      var ev = byName[nm.toLowerCase()];
+      if (!ev) {
+        ev = { id: uid(), name: nm, type: '', date: (e.created || '').slice(0, 10), counselor: '', campus: '', created: e.created || new Date().toISOString() };
+        events.push(ev); byName[nm.toLowerCase()] = ev;
+      }
+      var c = Object.assign({}, e); c.eventId = ev.id; c.event = ev.name; changed.push(c);
     });
-    return order.map(function (name) { return { name: name, items: map[name] }; });
+    if (changed.length) { saveEvents(); return putEntries(changed).then(function () { return allEntries(); }); }
+    return Promise.resolve(list);
+  }
+
+  function groupsOf(entries) {
+    var byId = {};
+    entries.sort(function (a, b) { return a.created < b.created ? 1 : -1; });
+    entries.forEach(function (e) { (byId[e.eventId] = byId[e.eventId] || []).push(e); });
+    var cur = settings.currentEvent;
+    return events.slice().sort(function (a, b) {
+      if (a.id === cur) return -1; if (b.id === cur) return 1;
+      return (b.date || '') < (a.date || '') ? -1 : (b.date || '') > (a.date || '') ? 1 : (b.created < a.created ? -1 : 1);
+    }).map(function (ev) { return { ev: ev, name: ev.name, items: byId[ev.id] || [] }; });
   }
 
   var lastGroups = [];
   function renderGroups() {
-    allEntries().then(function (entries) {
+    allEntries().then(migrateEntries).then(function (entries) {
       lastGroups = groupsOf(entries || []);
+      renderCurrent();
       var host = $('groups');
-      if (!lastGroups.length) {
-        host.innerHTML = '<div class="empty">No sign-ups yet</div>';
-        return;
-      }
+      if (!lastGroups.length) { host.innerHTML = '<div class="empty">No events yet</div>'; return; }
       host.innerHTML = lastGroups.map(function (g, gi) {
+        var isCur = g.ev.id === settings.currentEvent;
         var fresh = g.items.filter(function (e) { return !e.exported; }).length;
         var rows = g.items.map(function (e) {
           var d = new Date(e.created);
@@ -994,24 +1311,33 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
             (e.exported ? '<td class="sent">Exported</td>' : '<td></td>') +
             '<td style="text-align:right"><button class="x" data-del="' + esc(e.id) + '" aria-label="Delete">×</button></td></tr>';
         }).join('');
-        return '<div class="group">' +
+        var has = g.items.length > 0;
+        return '<div class="group' + (isCur ? ' current' : '') + '">' +
           '<div class="group-head"><h3>' + esc(g.name) +
+            (isCur ? '<span class="pill cur">Current</span>' : '') +
             '<span class="pill">' + g.items.length + '</span>' +
             (fresh ? '<span class="pill new">' + fresh + ' new</span>' : '') + '</h3>' +
           '<div class="row">' +
-            (CAN_SHARE ? '<button class="btn primary" data-share="' + gi + '">Email or AirDrop</button>' : '') +
-            '<button class="btn' + (CAN_SHARE ? '' : ' primary') + '" data-download="' + gi + '">Download CSV</button>' +
-            '<button class="btn danger" data-clear="' + gi + '">Delete list</button>' +
-          '</div></div>' +
-          '<table><thead><tr><th>Name</th><th>Email</th><th>Signed up</th><th></th><th></th></tr></thead><tbody>' +
-          rows + '</tbody></table></div>';
+            (isCur ? '' : '<button class="btn navy" data-use="' + gi + '">Use this event</button>') +
+            (has && CAN_SHARE ? '<button class="btn primary" data-share="' + gi + '">Email or AirDrop</button>' : '') +
+            (has ? '<button class="btn' + (CAN_SHARE ? '' : ' primary') + '" data-download="' + gi + '">Download</button>' : '') +
+            '<button class="btn danger" data-clear="' + gi + '">Delete</button>' +
+          '</div>' +
+          '<div class="group-meta">' + eventMeta(g.ev) + '</div></div>' +
+          (has ? '<table><thead><tr><th>Name</th><th>Email</th><th>Signed up</th><th></th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
+               : '<div class="empty">No sign-ups yet</div>') +
+          '</div>';
       }).join('');
     });
   }
 
   $('groups').addEventListener('click', function (ev) {
     var b = ev.target.closest('button'); if (!b) return;
-    if (b.hasAttribute('data-share')) exportGroup(lastGroups[+b.getAttribute('data-share')], 'share');
+    if (b.hasAttribute('data-use')) {
+      settings.currentEvent = lastGroups[+b.getAttribute('data-use')].ev.id; saveSettings();
+      closeEventForm(); renderGroups(); toast('Now signing up for ' + curEvent().name); window.scrollTo(0, 0);
+    }
+    else if (b.hasAttribute('data-share')) exportGroup(lastGroups[+b.getAttribute('data-share')], 'share');
     else if (b.hasAttribute('data-download')) exportGroup(lastGroups[+b.getAttribute('data-download')], 'download');
     else if (b.hasAttribute('data-clear')) clearGroup(lastGroups[+b.getAttribute('data-clear')]);
     else if (b.hasAttribute('data-del')) {
@@ -1020,56 +1346,133 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
     }
   });
 
-  function csvCell(v) {
-    v = String(v == null ? '' : v);
-    // Keep spreadsheet apps from treating a typed value as a formula — but
-    // leave "+1 555…" / "-" phone styles alone (a digit, space or paren follows).
-    if (/^[=@\t\r]/.test(v) || /^[+\-](?![\d\s(])/.test(v)) v = "'" + v;
-    return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  // ---------- LIU Recruit ProspectImportTemplate (.xlsx) ----------
+  // One row per sign-up, built the way Homebase's _build_recruit_comment_xlsx
+  // builds a prospect's row: raw codes, RecruitStatus P, both phone columns,
+  // CEEB / HSCity / HSState written empty, Plan1Nm resolved from the program
+  // and campus, and the event comment in Homebase's own wording.
+  function termCode(t) {
+    var m = /^(Spring|Summer|Fall) (\d{4})$/.exec(t || '');
+    return m ? '1' + m[2].slice(-2) + SEASON_DIGIT[m[1]] : '';
   }
-  function toCsv(items) {
-    var lines = [COLUMNS.map(function (c) { return csvCell(c[1]); }).join(',')];
-    items.slice().sort(function (a, b) { return a.created < b.created ? -1 : 1; }).forEach(function (e) {
-      lines.push(COLUMNS.map(function (c) { return csvCell(e[c[0]]); }).join(','));
+  function planCode(major, campus) {
+    if (!major) return '';
+    return ((PLAN_CODES.byCampus[campus] || {})[major]) || PLAN_CODES.any[major] || '';
+  }
+  function recruitComment(e, ev) {
+    var et = (ev && (ev.type && ev.type !== 'Other' ? ev.type : ev.name)) || e.event || 'a recruitment event';
+    var out = EVENT_COMMENT.replace('{event_type}', et);
+    if (e.grad_year && /^\d{4}$/.test(e.grad_year)) out += ' Graduation year ' + e.grad_year + '.';
+    if (e.comment) out += ' Student comment: ' + e.comment;
+    return out;
+  }
+  function recruitRow(e, ev) {
+    var phone = /\d/.test(e.phone || '') ? e.phone : null;
+    return [e.first_name, e.last_name, e.email, e.address || null, null, e.city || null, e.state || null,
+      e.postal || null, phone, phone, e.country || null, e.high_school || null, '', '', '',
+      ADMIT_TYPE_CODE[e.admit_type] || null, termCode(e.admit_term) || null, 'P',
+      INSTITUTION_LETTER[e.campus] || null, planCode(e.intended_major, e.campus) || null,
+      e.intended_major || null, recruitComment(e, ev)];
+  }
+  function xmlText(v) {
+    return String(v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function colName(i) { var n = '', x = i + 1; while (x) { var r = (x - 1) % 26; n = String.fromCharCode(65 + r) + n; x = Math.floor((x - 1) / 26); } return n; }
+  function sheetXml(rows) {
+    var body = rows.map(function (row, ri) {
+      var r = ri + 1;
+      return '<row r="' + r + '">' + row.map(function (v, ci) {
+        var ref = colName(ci) + r;
+        if (v === null || v === undefined) return '';             // openpyxl writes nothing for None
+        if (v === '') return '<c r="' + ref + '" />';             // ...and an empty cell for ''
+        return '<c r="' + ref + '" t="str"><v>' + xmlText(v) + '</v></c>';
+      }).join('') + '</row>';
+    }).join('');
+    return '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><outlinePr summaryBelow="1" summaryRight="1" /><pageSetUpPr /></sheetPr>' +
+      '<dimension ref="A1:' + colName(RECRUIT_HEADERS.length - 1) + rows.length + '" /><sheetViews><sheetView workbookViewId="0"><selection activeCell="A1" sqref="A1" /></sheetView></sheetViews>' +
+      '<sheetFormatPr baseColWidth="8" defaultRowHeight="15" /><sheetData>' + body + '</sheetData>' +
+      '<pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5" /></worksheet>';
+  }
+  // The package parts are openpyxl's own (what Homebase's export ships).
+  var XLSX_PARTS = [{"name": "docProps/app.xml", "text": "<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\"><Application>Microsoft Excel Compatible / Openpyxl 3.1.5<\/Application><AppVersion>3.1<\/AppVersion><\/Properties>"}, {"name": "docProps/core.xml", "text": "<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><dc:creator>openpyxl<\/dc:creator><dcterms:created xsi:type=\"dcterms:W3CDTF\">__STAMP__<\/dcterms:created><dcterms:modified xsi:type=\"dcterms:W3CDTF\">__STAMP__<\/dcterms:modified><\/cp:coreProperties>"}, {"name": "xl/theme/theme1.xml", "text": "<?xml version=\"1.0\"?>\n<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" name=\"Office Theme\">\n  <a:themeElements>\n    <a:clrScheme name=\"Office\">\n      <a:dk1>\n        <a:sysClr val=\"windowText\" lastClr=\"000000\"/>\n      <\/a:dk1>\n      <a:lt1>\n        <a:sysClr val=\"window\" lastClr=\"FFFFFF\"/>\n      <\/a:lt1>\n      <a:dk2>\n        <a:srgbClr val=\"1F497D\"/>\n      <\/a:dk2>\n      <a:lt2>\n        <a:srgbClr val=\"EEECE1\"/>\n      <\/a:lt2>\n      <a:accent1>\n        <a:srgbClr val=\"4F81BD\"/>\n      <\/a:accent1>\n      <a:accent2>\n        <a:srgbClr val=\"C0504D\"/>\n      <\/a:accent2>\n      <a:accent3>\n        <a:srgbClr val=\"9BBB59\"/>\n      <\/a:accent3>\n      <a:accent4>\n        <a:srgbClr val=\"8064A2\"/>\n      <\/a:accent4>\n      <a:accent5>\n        <a:srgbClr val=\"4BACC6\"/>\n      <\/a:accent5>\n      <a:accent6>\n        <a:srgbClr val=\"F79646\"/>\n      <\/a:accent6>\n      <a:hlink>\n        <a:srgbClr val=\"0000FF\"/>\n      <\/a:hlink>\n      <a:folHlink>\n        <a:srgbClr val=\"800080\"/>\n      <\/a:folHlink>\n    <\/a:clrScheme>\n    <a:fontScheme name=\"Office\">\n      <a:majorFont>\n        <a:latin typeface=\"Cambria\"/>\n        <a:ea typeface=\"\"/>\n        <a:cs typeface=\"\"/>\n        <a:font script=\"Jpan\" typeface=\"&#xFF2D;&#xFF33; &#xFF30;&#x30B4;&#x30B7;&#x30C3;&#x30AF;\"/>\n        <a:font script=\"Hang\" typeface=\"&#xB9D1;&#xC740; &#xACE0;&#xB515;\"/>\n        <a:font script=\"Hans\" typeface=\"&#x5B8B;&#x4F53;\"/>\n        <a:font script=\"Hant\" typeface=\"&#x65B0;&#x7D30;&#x660E;&#x9AD4;\"/>\n        <a:font script=\"Arab\" typeface=\"Times New Roman\"/>\n        <a:font script=\"Hebr\" typeface=\"Times New Roman\"/>\n        <a:font script=\"Thai\" typeface=\"Tahoma\"/>\n        <a:font script=\"Ethi\" typeface=\"Nyala\"/>\n        <a:font script=\"Beng\" typeface=\"Vrinda\"/>\n        <a:font script=\"Gujr\" typeface=\"Shruti\"/>\n        <a:font script=\"Khmr\" typeface=\"MoolBoran\"/>\n        <a:font script=\"Knda\" typeface=\"Tunga\"/>\n        <a:font script=\"Guru\" typeface=\"Raavi\"/>\n        <a:font script=\"Cans\" typeface=\"Euphemia\"/>\n        <a:font script=\"Cher\" typeface=\"Plantagenet Cherokee\"/>\n        <a:font script=\"Yiii\" typeface=\"Microsoft Yi Baiti\"/>\n        <a:font script=\"Tibt\" typeface=\"Microsoft Himalaya\"/>\n        <a:font script=\"Thaa\" typeface=\"MV Boli\"/>\n        <a:font script=\"Deva\" typeface=\"Mangal\"/>\n        <a:font script=\"Telu\" typeface=\"Gautami\"/>\n        <a:font script=\"Taml\" typeface=\"Latha\"/>\n        <a:font script=\"Syrc\" typeface=\"Estrangelo Edessa\"/>\n        <a:font script=\"Orya\" typeface=\"Kalinga\"/>\n        <a:font script=\"Mlym\" typeface=\"Kartika\"/>\n        <a:font script=\"Laoo\" typeface=\"DokChampa\"/>\n        <a:font script=\"Sinh\" typeface=\"Iskoola Pota\"/>\n        <a:font script=\"Mong\" typeface=\"Mongolian Baiti\"/>\n        <a:font script=\"Viet\" typeface=\"Times New Roman\"/>\n        <a:font script=\"Uigh\" typeface=\"Microsoft Uighur\"/>\n      <\/a:majorFont>\n      <a:minorFont>\n        <a:latin typeface=\"Calibri\"/>\n        <a:ea typeface=\"\"/>\n        <a:cs typeface=\"\"/>\n        <a:font script=\"Jpan\" typeface=\"&#xFF2D;&#xFF33; &#xFF30;&#x30B4;&#x30B7;&#x30C3;&#x30AF;\"/>\n        <a:font script=\"Hang\" typeface=\"&#xB9D1;&#xC740; &#xACE0;&#xB515;\"/>\n        <a:font script=\"Hans\" typeface=\"&#x5B8B;&#x4F53;\"/>\n        <a:font script=\"Hant\" typeface=\"&#x65B0;&#x7D30;&#x660E;&#x9AD4;\"/>\n        <a:font script=\"Arab\" typeface=\"Arial\"/>\n        <a:font script=\"Hebr\" typeface=\"Arial\"/>\n        <a:font script=\"Thai\" typeface=\"Tahoma\"/>\n        <a:font script=\"Ethi\" typeface=\"Nyala\"/>\n        <a:font script=\"Beng\" typeface=\"Vrinda\"/>\n        <a:font script=\"Gujr\" typeface=\"Shruti\"/>\n        <a:font script=\"Khmr\" typeface=\"DaunPenh\"/>\n        <a:font script=\"Knda\" typeface=\"Tunga\"/>\n        <a:font script=\"Guru\" typeface=\"Raavi\"/>\n        <a:font script=\"Cans\" typeface=\"Euphemia\"/>\n        <a:font script=\"Cher\" typeface=\"Plantagenet Cherokee\"/>\n        <a:font script=\"Yiii\" typeface=\"Microsoft Yi Baiti\"/>\n        <a:font script=\"Tibt\" typeface=\"Microsoft Himalaya\"/>\n        <a:font script=\"Thaa\" typeface=\"MV Boli\"/>\n        <a:font script=\"Deva\" typeface=\"Mangal\"/>\n        <a:font script=\"Telu\" typeface=\"Gautami\"/>\n        <a:font script=\"Taml\" typeface=\"Latha\"/>\n        <a:font script=\"Syrc\" typeface=\"Estrangelo Edessa\"/>\n        <a:font script=\"Orya\" typeface=\"Kalinga\"/>\n        <a:font script=\"Mlym\" typeface=\"Kartika\"/>\n        <a:font script=\"Laoo\" typeface=\"DokChampa\"/>\n        <a:font script=\"Sinh\" typeface=\"Iskoola Pota\"/>\n        <a:font script=\"Mong\" typeface=\"Mongolian Baiti\"/>\n        <a:font script=\"Viet\" typeface=\"Arial\"/>\n        <a:font script=\"Uigh\" typeface=\"Microsoft Uighur\"/>\n      <\/a:minorFont>\n    <\/a:fontScheme>\n    <a:fmtScheme name=\"Office\">\n      <a:fillStyleLst>\n        <a:solidFill>\n          <a:schemeClr val=\"phClr\"/>\n        <\/a:solidFill>\n        <a:gradFill rotWithShape=\"1\">\n          <a:gsLst>\n            <a:gs pos=\"0\">\n              <a:schemeClr val=\"phClr\">\n                <a:tint val=\"50000\"/>\n                <a:satMod val=\"300000\"/>\n              <\/a:schemeClr>\n            <\/a:gs>\n            <a:gs pos=\"35000\">\n              <a:schemeClr val=\"phClr\">\n                <a:tint val=\"37000\"/>\n                <a:satMod val=\"300000\"/>\n              <\/a:schemeClr>\n            <\/a:gs>\n            <a:gs pos=\"100000\">\n              <a:schemeClr val=\"phClr\">\n                <a:tint val=\"15000\"/>\n                <a:satMod val=\"350000\"/>\n              <\/a:schemeClr>\n            <\/a:gs>\n          <\/a:gsLst>\n          <a:lin ang=\"16200000\" scaled=\"1\"/>\n        <\/a:gradFill>\n        <a:gradFill rotWithShape=\"1\">\n          <a:gsLst>\n            <a:gs pos=\"0\">\n              <a:schemeClr val=\"phClr\">\n                <a:shade val=\"51000\"/>\n                <a:satMod val=\"130000\"/>\n              <\/a:schemeClr>\n            <\/a:gs>\n            <a:gs pos=\"80000\">\n              <a:schemeClr val=\"phClr\">\n                <a:shade val=\"93000\"/>\n                <a:satMod val=\"130000\"/>\n              <\/a:schemeClr>\n            <\/a:gs>\n            <a:gs pos=\"100000\">\n              <a:schemeClr val=\"phClr\">\n                <a:shade val=\"94000\"/>\n                <a:satMod val=\"135000\"/>\n              <\/a:schemeClr>\n            <\/a:gs>\n          <\/a:gsLst>\n          <a:lin ang=\"16200000\" scaled=\"0\"/>\n        <\/a:gradFill>\n      <\/a:fillStyleLst>\n      <a:lnStyleLst>\n        <a:ln w=\"9525\" cap=\"flat\" cmpd=\"sng\" algn=\"ctr\">\n          <a:solidFill>\n            <a:schemeClr val=\"phClr\">\n              <a:shade val=\"95000\"/>\n              <a:satMod val=\"105000\"/>\n            <\/a:schemeClr>\n          <\/a:solidFill>\n          <a:prstDash val=\"solid\"/>\n        <\/a:ln>\n        <a:ln w=\"25400\" cap=\"flat\" cmpd=\"sng\" algn=\"ctr\">\n          <a:solidFill>\n            <a:schemeClr val=\"phClr\"/>\n          <\/a:solidFill>\n          <a:prstDash val=\"solid\"/>\n        <\/a:ln>\n        <a:ln w=\"38100\" cap=\"flat\" cmpd=\"sng\" algn=\"ctr\">\n          <a:solidFill>\n            <a:schemeClr val=\"phClr\"/>\n          <\/a:solidFill>\n          <a:prstDash val=\"solid\"/>\n        <\/a:ln>\n      <\/a:lnStyleLst>\n      <a:effectStyleLst>\n        <a:effectStyle>\n          <a:effectLst>\n            <a:outerShdw blurRad=\"40000\" dist=\"20000\" dir=\"5400000\" rotWithShape=\"0\">\n              <a:srgbClr val=\"000000\">\n                <a:alpha val=\"38000\"/>\n              <\/a:srgbClr>\n            <\/a:outerShdw>\n          <\/a:effectLst>\n        <\/a:effectStyle>\n        <a:effectStyle>\n          <a:effectLst>\n            <a:outerShdw blurRad=\"40000\" dist=\"23000\" dir=\"5400000\" rotWithShape=\"0\">\n              <a:srgbClr val=\"000000\">\n                <a:alpha val=\"35000\"/>\n              <\/a:srgbClr>\n            <\/a:outerShdw>\n          <\/a:effectLst>\n        <\/a:effectStyle>\n        <a:effectStyle>\n          <a:effectLst>\n            <a:outerShdw blurRad=\"40000\" dist=\"23000\" dir=\"5400000\" rotWithShape=\"0\">\n              <a:srgbClr val=\"000000\">\n                <a:alpha val=\"35000\"/>\n              <\/a:srgbClr>\n            <\/a:outerShdw>\n          <\/a:effectLst>\n          <a:scene3d>\n            <a:camera prst=\"orthographicFront\">\n              <a:rot lat=\"0\" lon=\"0\" rev=\"0\"/>\n            <\/a:camera>\n            <a:lightRig rig=\"threePt\" dir=\"t\">\n              <a:rot lat=\"0\" lon=\"0\" rev=\"1200000\"/>\n            <\/a:lightRig>\n          <\/a:scene3d>\n          <a:sp3d>\n            <a:bevelT w=\"63500\" h=\"25400\"/>\n          <\/a:sp3d>\n        <\/a:effectStyle>\n      <\/a:effectStyleLst>\n      <a:bgFillStyleLst>\n        <a:solidFill>\n          <a:schemeClr val=\"phClr\"/>\n        <\/a:solidFill>\n        <a:gradFill rotWithShape=\"1\">\n          <a:gsLst>\n            <a:gs pos=\"0\">\n              <a:schemeClr val=\"phClr\">\n                <a:tint val=\"40000\"/>\n                <a:satMod val=\"350000\"/>\n              <\/a:schemeClr>\n            <\/a:gs>\n            <a:gs pos=\"40000\">\n              <a:schemeClr val=\"phClr\">\n                <a:tint val=\"45000\"/>\n                <a:shade val=\"99000\"/>\n                <a:satMod val=\"350000\"/>\n              <\/a:schemeClr>\n            <\/a:gs>\n            <a:gs pos=\"100000\">\n              <a:schemeClr val=\"phClr\">\n                <a:shade val=\"20000\"/>\n                <a:satMod val=\"255000\"/>\n              <\/a:schemeClr>\n            <\/a:gs>\n          <\/a:gsLst>\n          <a:path path=\"circle\">\n            <a:fillToRect l=\"50000\" t=\"-80000\" r=\"50000\" b=\"180000\"/>\n          <\/a:path>\n        <\/a:gradFill>\n        <a:gradFill rotWithShape=\"1\">\n          <a:gsLst>\n            <a:gs pos=\"0\">\n              <a:schemeClr val=\"phClr\">\n                <a:tint val=\"80000\"/>\n                <a:satMod val=\"300000\"/>\n              <\/a:schemeClr>\n            <\/a:gs>\n            <a:gs pos=\"100000\">\n              <a:schemeClr val=\"phClr\">\n                <a:shade val=\"30000\"/>\n                <a:satMod val=\"200000\"/>\n              <\/a:schemeClr>\n            <\/a:gs>\n          <\/a:gsLst>\n          <a:path path=\"circle\">\n            <a:fillToRect l=\"50000\" t=\"50000\" r=\"50000\" b=\"50000\"/>\n          <\/a:path>\n        <\/a:gradFill>\n      <\/a:bgFillStyleLst>\n    <\/a:fmtScheme>\n  <\/a:themeElements>\n  <a:objectDefaults/>\n  <a:extraClrSchemeLst/>\n<\/a:theme>\n"}, {"name": "xl/worksheets/sheet1.xml", "text": ""}, {"name": "xl/styles.xml", "text": "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><numFmts count=\"0\" /><fonts count=\"1\"><font><name val=\"Calibri\" /><family val=\"2\" /><color theme=\"1\" /><sz val=\"11\" /><scheme val=\"minor\" /><\/font><\/fonts><fills count=\"2\"><fill><patternFill /><\/fill><fill><patternFill patternType=\"gray125\" /><\/fill><\/fills><borders count=\"1\"><border><left /><right /><top /><bottom /><diagonal /><\/border><\/borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" /><\/cellStyleXfs><cellXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" pivotButton=\"0\" quotePrefix=\"0\" xfId=\"0\" /><\/cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" hidden=\"0\" /><\/cellStyles><tableStyles count=\"0\" defaultTableStyle=\"TableStyleMedium9\" defaultPivotStyle=\"PivotStyleLight16\" /><colors><indexedColors><rgbColor rgb=\"00000000\" /><rgbColor rgb=\"00FFFFFF\" /><rgbColor rgb=\"00FF0000\" /><rgbColor rgb=\"0000FF00\" /><rgbColor rgb=\"000000FF\" /><rgbColor rgb=\"00FFFF00\" /><rgbColor rgb=\"00FF00FF\" /><rgbColor rgb=\"0000FFFF\" /><rgbColor rgb=\"00000000\" /><rgbColor rgb=\"00FFFFFF\" /><rgbColor rgb=\"00FF0000\" /><rgbColor rgb=\"0000FF00\" /><rgbColor rgb=\"000000FF\" /><rgbColor rgb=\"00FFFF00\" /><rgbColor rgb=\"00FF00FF\" /><rgbColor rgb=\"0000FFFF\" /><rgbColor rgb=\"00800000\" /><rgbColor rgb=\"00008000\" /><rgbColor rgb=\"00000080\" /><rgbColor rgb=\"00808000\" /><rgbColor rgb=\"00800080\" /><rgbColor rgb=\"00008080\" /><rgbColor rgb=\"00C0C0C0\" /><rgbColor rgb=\"00808080\" /><rgbColor rgb=\"009999FF\" /><rgbColor rgb=\"00993366\" /><rgbColor rgb=\"00FFFFCC\" /><rgbColor rgb=\"00CCFFFF\" /><rgbColor rgb=\"00660066\" /><rgbColor rgb=\"00FF8080\" /><rgbColor rgb=\"000066CC\" /><rgbColor rgb=\"00CCCCFF\" /><rgbColor rgb=\"00000080\" /><rgbColor rgb=\"00FF00FF\" /><rgbColor rgb=\"00FFFF00\" /><rgbColor rgb=\"0000FFFF\" /><rgbColor rgb=\"00800080\" /><rgbColor rgb=\"00800000\" /><rgbColor rgb=\"00008080\" /><rgbColor rgb=\"000000FF\" /><rgbColor rgb=\"0000CCFF\" /><rgbColor rgb=\"00CCFFFF\" /><rgbColor rgb=\"00CCFFCC\" /><rgbColor rgb=\"00FFFF99\" /><rgbColor rgb=\"0099CCFF\" /><rgbColor rgb=\"00FF99CC\" /><rgbColor rgb=\"00CC99FF\" /><rgbColor rgb=\"00FFCC99\" /><rgbColor rgb=\"003366FF\" /><rgbColor rgb=\"0033CCCC\" /><rgbColor rgb=\"0099CC00\" /><rgbColor rgb=\"00FFCC00\" /><rgbColor rgb=\"00FF9900\" /><rgbColor rgb=\"00FF6600\" /><rgbColor rgb=\"00666699\" /><rgbColor rgb=\"00969696\" /><rgbColor rgb=\"00003366\" /><rgbColor rgb=\"00339966\" /><rgbColor rgb=\"00003300\" /><rgbColor rgb=\"00333300\" /><rgbColor rgb=\"00993300\" /><rgbColor rgb=\"00993366\" /><rgbColor rgb=\"00333399\" /><rgbColor rgb=\"00333333\" /><\/indexedColors><\/colors><\/styleSheet>"}, {"name": "_rels/.rels", "text": "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\" Id=\"rId1\" /><Relationship Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\" Id=\"rId2\" /><Relationship Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties\" Target=\"docProps/app.xml\" Id=\"rId3\" /><\/Relationships>"}, {"name": "xl/workbook.xml", "text": "<workbook xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><workbookPr /><workbookProtection /><bookViews><workbookView visibility=\"visible\" minimized=\"0\" showHorizontalScroll=\"1\" showVerticalScroll=\"1\" showSheetTabs=\"1\" tabRatio=\"600\" firstSheet=\"0\" activeTab=\"0\" autoFilterDateGrouping=\"1\" /><\/bookViews><sheets><sheet name=\"Prospect Template\" sheetId=\"1\" state=\"visible\" r:id=\"rId1\" /><\/sheets><definedNames /><calcPr calcId=\"124519\" fullCalcOnLoad=\"1\" /><\/workbook>"}, {"name": "xl/_rels/workbook.xml.rels", "text": "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"/xl/worksheets/sheet1.xml\" Id=\"rId1\" /><Relationship Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\" Id=\"rId2\" /><Relationship Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme\" Target=\"theme/theme1.xml\" Id=\"rId3\" /><\/Relationships>"}, {"name": "[Content_Types].xml", "text": "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\" /><Default Extension=\"xml\" ContentType=\"application/xml\" /><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\" /><Override PartName=\"/xl/theme/theme1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.theme+xml\" /><Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\" /><Override PartName=\"/docProps/app.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.extended-properties+xml\" /><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\" /><\/Types>"}];
+  var CRC_TABLE = (function () {
+    var t = [], c;
+    for (var n = 0; n < 256; n++) { c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+    return t;
+  })();
+  function crc32(bytes) { var c = 0xFFFFFFFF; for (var i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function utf8(str) { return new TextEncoder().encode(str); }
+  function zipStore(files) {          // [{name, data: Uint8Array}] → a ZIP (stored, no compression)
+    var d = new Date();
+    var dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+    var dosDate = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    var chunks = [], central = [], offset = 0;
+    function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+    function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+    files.forEach(function (f) {
+      var name = utf8(f.name), crc = crc32(f.data), size = f.data.length;
+      var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(dosTime), u16(dosDate), u32(crc), u32(size), u32(size), u16(name.length), u16(0));
+      chunks.push(new Uint8Array(local), name, f.data);
+      central.push(new Uint8Array([].concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(dosTime), u16(dosDate), u32(crc), u32(size), u32(size),
+        u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset))), name);
+      offset += local.length + name.length + size;
     });
-    return '﻿' + lines.join('\r\n') + '\r\n';
+    var cdSize = central.reduce(function (n, c) { return n + c.length; }, 0);
+    var end = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(cdSize), u32(offset), u16(0)));
+    return new Blob(chunks.concat(central, [end]), { type: XLSX_TYPE });
   }
-  function safeName(s) { return s.replace(/[\/\\:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 60); }
+  var XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  function recruitXlsx(items, ev) {
+    var rows = [RECRUIT_HEADERS].concat(items.slice().sort(function (a, b) { return a.created < b.created ? -1 : 1; })
+      .map(function (e) { return recruitRow(e, ev); }));
+    var stamp = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+    var parts = XLSX_PARTS.map(function (p) {
+      var text = p.name === 'xl/worksheets/sheet1.xml' ? sheetXml(rows)
+        : p.name === 'docProps/core.xml' ? p.text.replace(/__STAMP__/g, stamp) : p.text;
+      return { name: p.name, data: utf8(text) };
+    });
+    return zipStore(parts);
+  }
+  function safeName(s) { return String(s || '').replace(/[^\w\s-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Event'; }
 
-  // Email or AirDrop = the iPad's share sheet with the CSV attached (Mail,
-  // AirDrop, Messages, Save to Files…); the subject line is filled in.
-  // Download CSV = the file straight into Files → Downloads.
+  // Email or AirDrop = the iPad's share sheet with the workbook attached
+  // (Mail, AirDrop, Messages, Save to Files…), subject filled in.
+  // Download = the workbook straight into Files → Downloads.
   var CAN_SHARE = (function () {
-    try { return !!(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.csv', { type: 'text/csv' })] })); }
+    try { return !!(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.xlsx', { type: XLSX_TYPE })] })); }
     catch (e) { return false; }
   })();
   function exportGroup(g, how) {
-    if (!g) return;
-    var d = new Date();
-    var fname = safeName(g.name) + ' - ' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '-' + d.getFullYear() + '.csv';
-    var csv = toCsv(g.items);
+    if (!g || !g.items.length) return;
+    var d = new Date(), ev = g.ev;
+    var ymd = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
+    // Homebase names it "<event> - ProspectImportTemplate_<date>.xlsx"; the
+    // counselor rides in the name (the template has no column for one).
+    var fname = safeName(g.name) + (ev.counselor ? ' - ' + safeName(ev.counselor) : '') + ' - ProspectImportTemplate_' + ymd + '.xlsx';
+    var blob = recruitXlsx(g.items, ev);
     function markExported() {
       var stamp = new Date().toISOString();
       var upd = g.items.map(function (e) { var c = Object.assign({}, e); c.exported = c.exported || stamp; return c; });
-      return putEntries(upd).then(renderGroups);
+      return putEntries(upd).then(renderGroups).then(checkUnexported);
     }
     if (how === 'share' && CAN_SHARE) {
-      var file = new File([csv], fname, { type: 'text/csv' });
       navigator.share({
-        files: [file],
+        files: [new File([blob], fname, { type: XLSX_TYPE })],
         title: 'LIU sign-ups: ' + g.name,
-        text: g.items.length + ' sign-ups from ' + g.name + ' (' + fmtDate(d) + '). Upload the attached CSV in Homebase: open the event, then Upload a list.'
+        text: g.items.length + ' sign-ups from ' + g.name + (ev.date ? ' (' + isoToUs(ev.date) + ')' : '') +
+          (ev.counselor ? ', counselor ' + ev.counselor : '') + '. In Homebase: open the event, then Upload a list.'
       }).then(function () {
         markExported(); toast('Sent ' + g.items.length + ' sign-ups');
       }).catch(function (err) {
-        if (err && err.name !== 'AbortError') { toast('Sharing failed — downloading instead'); downloadCsv(csv, fname, markExported); }
+        if (err && err.name !== 'AbortError') { toast('Sharing failed — downloading instead'); downloadBlob(blob, fname, markExported); }
       });
     } else {
-      downloadCsv(csv, fname, markExported);
+      downloadBlob(blob, fname, markExported);
     }
   }
-  function downloadCsv(csv, fname, after) {
-    var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  function downloadBlob(blob, fname, after) {
+    var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url; a.download = fname;
     document.body.appendChild(a); a.click(); a.remove();
@@ -1081,17 +1484,53 @@ td.sent { color: var(--ok); font-weight: 600; font-size: 13px; }
   function clearGroup(g) {
     if (!g) return;
     var fresh = g.items.filter(function (e) { return !e.exported; }).length;
-    var msg = fresh
-      ? fresh + ' of these sign-ups have NOT been exported. Delete all ' + g.items.length + ' anyway? This cannot be undone.'
-      : 'Delete all ' + g.items.length + ' sign-ups for "' + g.name + '" from this iPad? They have been exported. This cannot be undone.';
-    if (confirm(msg)) delEntries(g.items.map(function (e) { return e.id; })).then(function () { toast('Deleted'); renderGroups(); });
+    var msg = !g.items.length ? 'Delete the event "' + g.name + '"?'
+      : fresh ? fresh + ' of these ' + g.items.length + ' sign-ups have NOT been exported. Delete "' + g.name + '" and all its sign-ups anyway? This cannot be undone.'
+      : 'Delete "' + g.name + '" and its ' + g.items.length + ' sign-ups from this iPad? They have been exported. This cannot be undone.';
+    if (!confirm(msg)) return;
+    delEntries(g.items.map(function (e) { return e.id; })).then(function () {
+      events = events.filter(function (e) { return e.id !== g.ev.id; }); saveEvents();
+      if (settings.currentEvent === g.ev.id) { settings.currentEvent = ''; saveSettings(); }
+      toast('Deleted'); renderGroups();
+      if (!curEvent()) openEventForm(null);
+    });
+  }
+
+  // ---------- unexported reminder ----------
+  // An event from an earlier day (or one started over a day ago) that still
+  // holds sign-ups nobody has exported puts a gold dot on the lock.
+  function checkUnexported() {
+    return allEntries().then(function (list) {
+      var today = todayIso(), dayAgo = new Date(Date.now() - 864e5).toISOString(), stale = 0;
+      (list || []).forEach(function (e) {
+        if (e.exported) return;
+        var ev = eventById(e.eventId);
+        var old = ev && ev.date ? ev.date < today : (e.created || '') < dayAgo;
+        if (old) stale++;
+      });
+      $('lockBtn').classList.toggle('alert', stale > 0);
+      var what = stale === 1 ? '1 sign-up from an earlier event is' : stale + ' sign-ups from an earlier event are';
+      $('lockBtn').setAttribute('aria-label', stale ? 'Staff — ' + what + ' waiting to be exported' : 'Staff');
+      $('lockBtn').title = stale ? what + ' waiting to be exported' : '';
+    }).catch(function () {});
   }
 
   // ---------- start ----------
   buildOptions();
   applySettings();
+  checkUnexported();
   if (!settings.pin) {
     openPin('set', function () { toast('PIN set'); showStaff(); });
+  } else if (!curEvent()) {
+    // pre-events installs: their single "event" setting becomes the first event
+    if ((settings.event || '').trim()) {
+      var first = { id: uid(), name: settings.event.trim(), type: 'College Fair', date: todayIso(), counselor: '', campus: settings.campus || '', created: new Date().toISOString() };
+      events.push(first); saveEvents(); settings.currentEvent = first.id; delete settings.event; delete settings.campus; saveSettings();
+      applySettings();
+    } else {
+      openPin('unlock', showStaff);
+      setPinSub('Staff: start an event first', false);
+    }
   }
 
   if ('serviceWorker' in navigator) {
